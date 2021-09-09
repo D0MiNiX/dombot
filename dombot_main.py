@@ -7,6 +7,7 @@ def main():
     from dombot import admin, start, regex, equipments, glory, monsters, triggers, user_tz, reminders, region
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
+    from dombot.text_to_speech import tts
 
     #dombot
     bot.add_event_handler(start.start)
@@ -36,6 +37,9 @@ def main():
     # typo tales - pick random player from guild member list
     bot.add_event_handler(dragon_egg.random_pick)
 
+    # tts
+    bot.add_event_handler(tts.tts)
+    
     # dom user bot
     dom.add_event_handler(blek_magic.cw)
     dom.add_event_handler(blek_magic.typo_tales)

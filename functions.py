@@ -80,7 +80,7 @@ def command(text, cmd):
 
 
 def command_with_args(text, cmd):
-    if re.match(r"^/{0}({1})*$|^/{0}({1})*\s+.*$".format(cmd, vars.bot_tag), text):
+    if re.match(r"^/{0}({1})*$|^/{0}({1})*\s+.*".format(cmd, vars.bot_tag), text):
         return True
     else:
         return False
