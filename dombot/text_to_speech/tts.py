@@ -12,7 +12,7 @@ async def tts(event):
 
     if cmd_with_args("tts"):
         data = event.raw_text.split(" ", 1)
-        lang_code = None
+        lang_code = "en"
         text = None
 
         if len(data) <= 1:
@@ -21,7 +21,7 @@ async def tts(event):
         else:
             text = data[1]
             lang_code = text.rsplit('|', 1)
-            if lang_code:
+            if lang_code != "en":
                 lang_code = lang_code[1].strip()
                 text = text.replace(lang_code, "").replace("|", "").strip()
  
