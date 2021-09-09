@@ -1,0 +1,7 @@
+telethon
+requests
+aiocron
+psycopg2-binary
+beautifulsoup4
+pandas_ods_reader
+tcp-latency

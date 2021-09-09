@@ -1,0 +1,8 @@
+• /reg_hunt <guild_tag> - To register the guild for the hunts. Max 3 guilds can be registered per group for now. Ask, if more is required.
+• /add_hunter <username> <level> - To add the player with the respective level. All 2 parameters are required, username and the level.
+• /rm_hunter <username> - To remove the player from the ping list.
+• /view_pings - Displays the current guild members being pinged for fights.
+• /monster <option> - Turn on and off pings for monster fights. <options> are `on` or `off`
+• /ambush <option> - Turn on and off pings for ambush fights. <options> are `on` or `off`
+
+Bot will pin the message for ambush fights and unpin when fight is over, if admin privileges are provided. Happy hunting 👾.

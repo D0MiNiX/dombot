@@ -1,0 +1,25 @@
+• /cal <expression> - calculates the expression. eg., /cal 5+3, /cal 80/45.
+• /cancerize - reply to a message to convert it to alternating case sentence without space. Try :D.
+• /cw_help - for help regarding cw stuff.
+• /fw_info - forward message info. reply to a message to get it date and time in UTC.
+• /get_tz <country_code or flag emo> - lists the available region in the country with utc offset.  
+• /help - this help.
+• /id - gets the id of person sending it. in grp it also gets the id of the grp. if sent as a reply, it fetches the id of the person you replied to.
+• /len - find the length of the message, either by replying or giving some text.
+• /list_members - list the members in the chat and their username and id.
+• /pause_reminder <reminder_name> - pauses the running reminder.
+• /ping - check if this thing is up or not. replies 'pong!' if up.
+• /reminders - lists the reminders and their status.
+• /resume_reminder <reminder_name> - resumes the paused reminder.
+• /rm_region - removes the region. UTC will be used as default.
+• /rm_reminder <reminder_name> - remove the reminder.
+• /rm_trigger <trigger_name> - removes the trigger. Alternative is /rm_tr.
+• /set_region <region> - sets the region to be used as local time for reminders.
+• /set_reminder - use to set reminders, reply to a message for more information.
+• /set_trigger <trigger_name> - reply to a message to set it as trigger. Alternative is /set_tr.
+• /start - just the formality command.
+• /time <country_code> - for time and date of the particular country.
+• /toss - flip a coin.
+• /triggers_info - gives detailed information on each trigger. Alternative is /tr_info.
+• /triggers - lists the triggers.
+• /utc - shows current time in UTC.

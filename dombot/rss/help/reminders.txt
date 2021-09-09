@@ -1,0 +1,21 @@
+/set_reminder args: Use it as a reply to other message that contains text, media, etc.
+args could be
+- <name_of_the_reminder> <interval> : reminder will be executed after said interval
+    - <interval> could be:
+        - seconds like 10, 15, 60, etc.
+        - H:M:S or H:M format, 15:02:12, 14:5, etc.
+        - hms, hm, ms, m like, 1h2m5s (1 hour 2 minutes 5 seconds), 1h2m, 5m23s, 65m
+- <name_of_the_reminder> <interval> repeat: reminder will be executed after said interval, but will be repeating in nature
+- <name_of_the_reminder> <interval> <start_time>: reminder will be executed after said interval, will be repeating in nature, and will start its first execution after the <start_time>.
+    - <start_time> follows the same format as <interval>
+
+Examples:
+• /set_reminder test_1 25 -> will get executed after 25 seconds
+• /set_reminder test_2 1h15m 0 -> will get executed after 1 hour 15 minutes and will repeat every 1 hr and 15 minute
+• /set_reminder test_3 1h15m 8h - will repeat every 1 hour 15 minutes after 8 hours from setting it
+• /set_reminder test_3 12:08 14:12 - will repeat every 12 hours 8 minutes after 14:12 UTC
+
+Decimal values for week, days, hours, minutes and seconds are allowed.
+Example: 0.5d would mean 12 hours (half day), 0.5w5.5m1.5s etc.
+All the times are in UTC, unless your region is set using `/set_region <region>`.
+Please use underscores as shown in example for name, since spaces are not possible.
