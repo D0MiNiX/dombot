@@ -12,7 +12,7 @@ async def tts(event):
 
     if cmd_with_args("tts"):
         data = event.raw_text.split(" ", 1)
-        lang_code = None
+        lang_code = "en"
         text = None
 
         if len(data) <= 1:
@@ -20,10 +20,10 @@ async def tts(event):
             raise events.StopPropagation
         else:
             text = data[1]
-            lang_code = text.rsplit('|', 1)
-            if lang_code and lang_code != "en":
-                lang_code = lang_code[1].strip()
-                text = text.replace(lang_code, "").replace("|", "").strip()
+            _lang_code = text.rsplit('|', 1)
+            if len(_lang_code) > 1:
+                text = _lang_code[0]
+                lang_code = _lang_code[1].strip()
  
         MAX_CHARS = 32
         file_path = "dombot/text_to_speech/"
