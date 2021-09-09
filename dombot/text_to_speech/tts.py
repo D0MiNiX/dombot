@@ -12,6 +12,7 @@ async def tts(event):
 
     if cmd_with_args("tts"):
         data = event.raw_text.split(" ", 1)
+        lang_code = None
         text = None
 
         if len(data) <= 1:
@@ -19,7 +20,11 @@ async def tts(event):
             raise events.StopPropagation
         else:
             text = data[1]
-       
+            lang_code = text.rsplit('|', 1)
+            if lang_code:
+                lang_code = lang_code[1].strip()
+                text = text.replace(lang_code, "").replace("|", "").strip()
+ 
         MAX_CHARS = 32
         file_path = "dombot/text_to_speech/"
         file_name = f"{file_path}{text[:MAX_CHARS]}.mp3"
@@ -28,7 +33,7 @@ async def tts(event):
             if os.path.exists(file_name):
                 await event.reply("File already exists/processing. Please try again later.")
                 raise events.StopPropagation
-            tts_obj = gTTS(text=text, slow=False)
+            tts_obj = gTTS(text=text, lang=lang_code, slow=False)
             tts_obj.save(file_name)
         except:
             await event.reply("Something went wrong. Make sure there are no special characters in text.")
