@@ -3,6 +3,7 @@ from functools import partial
 from functions import command, command_with_args
 from gtts import gTTS
 import os
+from vars import bot
 
 
 @events.register(events.NewMessage())
@@ -39,7 +40,7 @@ async def tts(event):
             await event.reply("Something went wrong. Make sure there are no special characters in text.")
             await events.StopPropagation
 
-        await event.reply(file=file_name)
+        await bot.send_file(event.chat_id, reply_to=event.id, file=file_name, voice_note=True, caption=text[:MAX_CHARS])
         os.remove(file_name)
         raise events.StopPropagation
 
