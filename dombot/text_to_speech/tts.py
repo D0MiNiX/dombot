@@ -4,6 +4,25 @@ from functions import command, command_with_args
 from gtts import gTTS
 import os
 from vars import bot
+import asyncio
+import threading
+
+
+lock = threading.Lock()
+
+
+async def task_done(text, lang_code, file_name, event_data):
+    await bot.send_file(event_data["chat_id"], reply_to=event_data["msg_id"], file=file_name, voice_note=True, caption=text[:32])
+    os.remove(file_name)
+
+
+def convert_thread(text, lang_code, file_name, event_data, loop):
+    lock.acquire()
+    tts_obj = gTTS(text=text, lang=lang_code, slow=False)
+    tts_obj.save(file_name)
+    lock.release()
+    loop.create_task(task_done(text, lang_code, file_name, event_data))
+    # asyncio.run(task_done(text, lang_code, file_name, event_data))
 
 
 @events.register(events.NewMessage())
@@ -34,13 +53,12 @@ async def tts(event):
             if os.path.exists(file_name):
                 await event.reply("File already exists/processing. Please try again later.")
                 raise events.StopPropagation
-            tts_obj = gTTS(text=text, lang=lang_code, slow=False)
-            tts_obj.save(file_name)
-        except:
+            conv_thread = threading.Thread(target=convert_thread, args=(text, lang_code, file_name, {"chat_id":event.chat_id, "msg_id": event.id}, asyncio.get_running_loop()))
+            conv_thread.start()
+        except Exception as e:
+            print(e.args[0])
             await event.reply("Something went wrong. Make sure there are no special characters in text.")
             await events.StopPropagation
 
-        await bot.send_file(event.chat_id, reply_to=event.id, file=file_name, voice_note=True, caption=text[:MAX_CHARS])
-        os.remove(file_name)
         raise events.StopPropagation
 
