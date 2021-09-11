@@ -9,7 +9,7 @@ def main():
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
 
-    #dombot
+    # dombot
     bot.add_event_handler(start.start)
     bot.add_event_handler(admin.admin_only)
     bot.add_event_handler(equipments.equips)
@@ -31,7 +31,7 @@ def main():
 
     bot.add_event_handler(start.user_action)
 
-    # Triggers
+    # triggers
     bot.add_event_handler(triggers.triggers)
 
     # typo tales - pick random player from guild member list
