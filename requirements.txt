@@ -6,3 +6,8 @@ beautifulsoup4
 pandas_ods_reader
 tcp-latency
 gTTS
+emoji-country-flag
+demoji
+apscheduler
+sqlalchemy
+arrow

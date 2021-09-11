@@ -6,10 +6,20 @@ import os
 from vars import bot
 import asyncio
 import threading
+from pathvalidate import sanitize_filename
 
 
 lock = threading.Lock()
 MAX_CHARS = 32
+converted = False
+
+
+async def check_and_send():
+    global converted
+    while True:
+        await asyncio.sleep(1)
+        if converted:
+            converted = False
 
 
 async def task_done(text, lang_code, file_name, event_data):
@@ -17,16 +27,17 @@ async def task_done(text, lang_code, file_name, event_data):
     os.remove(file_name)
 
 
-def convert_thread(text, lang_code, file_name, event_data, loop):
-    lock.acquire()
+def convert_thread(text, lang_code, file_name, event_data, loop=None):
+    global converted
+    # lock.acquire()
     tts_obj = gTTS(text=text, lang=lang_code, slow=False)
     tts_obj.save(file_name)
-    lock.release()
-    task = loop.create_task(task_done(text, lang_code, file_name, event_data))
-
-
-def dummy():
-    pass
+    try:
+        loop.create_task(task_done(text, lang_code, file_name, event_data))
+    except Exception as e:
+        print(e)
+    # lock.release()
+    converted = True
 
 
 @events.register(events.NewMessage())
@@ -41,29 +52,31 @@ async def tts(event):
         msg_id = 0
 
         if len(data) <= 1:
-            await event.reply("Give some text to be converted to speech. Optionally, language code can be provided " \
-                              "in the end as `text|de` to use german language speech. Alternatively, reply to a message " \
-                              "with a language code as `/tts ja`.")
-            raise events.StopPropagation
-        else:
             if event.is_reply:
-                print("is reply")
                 message = await event.get_reply_message()
                 text = message.raw_text
-                print(text)
                 msg_id = message.id
-                print(msg_id)
+            else:
+                await event.reply("Give some text to be converted to speech. Optionally, language code can be provided " \
+                                  "in the end as `text|de` to use german language speech. Alternatively, reply to a message " \
+                                  "with a language code as `/tts ja`.")
+                raise events.StopPropagation
+        else:
+            if event.is_reply:
+                message = await event.get_reply_message()
+                text = message.raw_text
+                msg_id = message.id
                 lang_code = data[1]
-                print(lang_code)
             else:
                 text = data[1]
                 _lang_code = text.rsplit('|', 1)
                 if len(_lang_code) > 1:
                     text = _lang_code[0]
                     lang_code = _lang_code[1].strip()
- 
+
+        file_name = sanitize_filename(text[:MAX_CHARS])
         file_path = "dombot/text_to_speech/"
-        file_name = f"{file_path}{text[:MAX_CHARS]}.mp3"
+        file_name = f"{file_path}{file_name}.mp3"
 
         try:
             if os.path.exists(file_name):
@@ -77,8 +90,5 @@ async def tts(event):
                               "provide language code as an argument, eg. `/tts ja`.")
             await events.StopPropagation
         
-        # dummy call to execute the async tick or smthng
-        # w/o this, task_done doesn't get called immediately
-        asyncio.get_event_loop().call_later(1, dummy)
         raise events.StopPropagation
 
