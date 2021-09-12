@@ -13,11 +13,6 @@ from pathvalidate import sanitize_filename
 MAX_CHARS = 32
 
 
-async def check_and_send():
-    while True:
-        await asyncio.sleep(1)
-
-
 async def send_exception(text, event_data):
     await bot.send_message(event_data["chat_id"], reply_to=event_data["msg_id"], message=text)
 
@@ -32,9 +27,9 @@ def convert_thread(text, lang_code, file_name, event_data, loop):
     try:
         tts_obj = gTTS(text=text, lang=lang_code, slow=False)
         tts_obj.save(file_name)
-        loop.create_task(task_done(text, lang_code, file_name, event_data))
+        loop.call_soon_threadsafe(loop.create_task, task_done(text, lang_code, file_name, event_data))
     except Exception as e:
-        loop.create_task(send_exception(str(e), event_data))
+        loop.call_soon_threadsafe(loop.create_task, send_exception(str(e), event_data))
     # lock.release()
 
 
