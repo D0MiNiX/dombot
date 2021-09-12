@@ -11,3 +11,4 @@ demoji
 apscheduler
 sqlalchemy
 arrow
+pathvalidate

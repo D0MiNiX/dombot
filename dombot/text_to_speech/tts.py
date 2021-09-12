@@ -9,17 +9,17 @@ import threading
 from pathvalidate import sanitize_filename
 
 
-lock = threading.Lock()
+# lock = threading.Lock()
 MAX_CHARS = 32
-converted = False
 
 
 async def check_and_send():
-    global converted
     while True:
         await asyncio.sleep(1)
-        if converted:
-            converted = False
+
+
+async def send_exception(text, event_data):
+    await bot.send_message(event_data["chat_id"], reply_to=event_data["msg_id"], message=text)
 
 
 async def task_done(text, lang_code, file_name, event_data):
@@ -27,17 +27,15 @@ async def task_done(text, lang_code, file_name, event_data):
     os.remove(file_name)
 
 
-def convert_thread(text, lang_code, file_name, event_data, loop=None):
-    global converted
+def convert_thread(text, lang_code, file_name, event_data, loop):
     # lock.acquire()
-    tts_obj = gTTS(text=text, lang=lang_code, slow=False)
-    tts_obj.save(file_name)
     try:
+        tts_obj = gTTS(text=text, lang=lang_code, slow=False)
+        tts_obj.save(file_name)
         loop.create_task(task_done(text, lang_code, file_name, event_data))
     except Exception as e:
-        print(e)
+        loop.create_task(send_exception(str(e), event_data))
     # lock.release()
-    converted = True
 
 
 @events.register(events.NewMessage())
