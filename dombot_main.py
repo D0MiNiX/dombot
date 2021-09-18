@@ -8,6 +8,7 @@ def main():
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
+    from dombot.image_processing import image_process
 
     # dombot
     bot.add_event_handler(start.start)
@@ -39,7 +40,10 @@ def main():
 
     # tts
     bot.add_event_handler(tts.tts)
-    
+
+    # image processing
+    bot.add_event_handler(image_process.process_image)
+
     # dom user bot
     dom.add_event_handler(blek_magic.cw)
     dom.add_event_handler(blek_magic.typo_tales)
