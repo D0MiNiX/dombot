@@ -10,6 +10,7 @@ import threading
 import re
 import asyncio
 from vars import bot
+from collections import namedtuple
 
 
 IMG_PRC_PATH = "dombot/image_processing/"
@@ -45,11 +46,11 @@ async def send_processed_image(message, file_name):
     os.remove(file_name)
 
 
-def image_process_thread(message, file_name, effects_data, loop):
-    for command, value in effects_data.items():
-        process_image_thread(file_name, command, value)
+def image_process_thread(data): # (message, file_name, effects_data, loop):
+    for command, value in data.effects_data.items():
+        process_image_thread(data.file_name, command, value)
 
-    loop.call_soon_threadsafe(loop.create_task, send_processed_image(message, file_name))
+    data.loop.call_soon_threadsafe(data.loop.create_task, send_processed_image(data.message, data.file_name))
 
 
 def process_command(command):
@@ -130,7 +131,9 @@ async def process_image(event):
                 file_name = f"{IMG_PRC_PATH}media_{random_num}{extension}" 
             await message.download_media(file=file_name)
             loop = asyncio.get_running_loop()
-            img_prc_thread = threading.Thread(target=image_process_thread, args=[message, file_name, effects_data, loop])
+            data_ntuple = namedtuple("data_ntuple", ["message", "file_name", "effects_data", "loop"])
+            data = data_ntuple(message, file_name, effects_data, loop)
+            img_prc_thread = threading.Thread(target=image_process_thread, args=[data])
             img_prc_thread.start()
         else:
             await event.reply("Invalid media.")
