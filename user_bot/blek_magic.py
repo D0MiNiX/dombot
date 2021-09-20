@@ -84,7 +84,8 @@ qst_txts = [
     'As I walk through the valley of the shadow of death',
     'At a remote place in the mountains you spot some funny looking',
     'You noticed a book lying under the tree',
-    'In and out, 20 second adventure!'
+    'In and out, 20 second adventure!',
+    'Being a naturally bad pathfinder, you got lost'
 ]
 
 # TypoTales
