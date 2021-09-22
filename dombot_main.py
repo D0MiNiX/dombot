@@ -29,7 +29,8 @@ def main():
     bot.add_event_handler(monsters.register)
     bot.add_event_handler(monsters.commands)
     bot.add_event_handler(monsters.reports)
-
+    
+    # user join/leaves group
     bot.add_event_handler(start.user_action)
 
     # triggers
@@ -44,14 +45,14 @@ def main():
     # image processing
     bot.add_event_handler(image_process.process_image)
 
+    # users timezones
+    bot.add_event_handler(user_tz.tz_handler)
+
     # dom user bot
     dom.add_event_handler(blek_magic.cw)
     dom.add_event_handler(blek_magic.typo_tales)
     dom.add_event_handler(blek_magic.bot_testing)
     dom.add_event_handler(report_leaders.cw_report_channel)
-
-    # users timezones
-    bot.add_event_handler(user_tz.tz_handler)
 
     # create backup job
     create_backup_job()
