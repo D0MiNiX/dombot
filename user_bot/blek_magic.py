@@ -22,10 +22,7 @@ pathfinder = "Being a naturally born pathfinder, you found a secret passage and 
 stam = 0
 rage = None
 button_number = None
-
-# me_regex = re.compile(r"🏅Level: \d+\n⚔️Atk: \d+ 🛡Def: \d+\n" + \
-#                         "🔥Exp: \d+\/\d+\n❤️Hp: \d+\/\d+\n🔋Stamina: \d+\/\d+")
-
+random_quest = False
 me_regex = re.compile(r".* \w*\s*of \w+ Castle")
 
 foray_results = [
@@ -114,29 +111,28 @@ async def rage_up():
 
 
 def clear_variables():
-    global stam, quest_started, arena_started, dice, foray, button_number, tt_qst
+    global stam, quest_started, arena_started, dice, foray, button_number
     stam = 0
     quest_started = False
     arena_started = False
     dice = False
     foray = False
     button_number = None
-    tt_qst = False
 
 
 @events.register(events.NewMessage(chats=CW_BOT, from_users=CW_BOT))
 async def cw(event):
 
     global stam, quest_started, arena_started, dice, monster_fight, foray, foray_results, quest_over, \
-        qst_txts, button_number, me_regex
+        qst_txts, button_number, me_regex, random_quest
 
     if "🎲You threw the dice on the table:" in event.raw_text or "No one sat down next to you =/" in \
             event.raw_text:
         await asyncio.sleep(random.randrange(1, 5))
         if dice:
             await event.respond("🎲Play some dice")
-        # else:
-        #     await event.respond("🛡Defend")   ... pn
+        else:
+            await event.respond("🛡Defend")
         await go_offline()
         raise events.StopPropagation
 
@@ -157,48 +153,38 @@ async def cw(event):
             quest_started = False
             foray = False
             await bot.send_message(BOT_TESTING, "No stam dude.")
-
         raise events.StopPropagation
 
     elif list_string_in_text(event.raw_text, qst_txts) and not arena_started:
-
         if "You were looking at the bright sparks emitted from the flame of your torch" in event.raw_text:
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("/on_tch")
-
         if pathfinder not in event.raw_text:
             stam -= 1
-
         if stam <= 0 or not quest_started:
             quest_started = False
             await asyncio.sleep(random.randrange(1, 5))
-            # await event.respond("🛡Defend")   ... pn
+            await event.respond("🛡Defend")
         else:
             await asyncio.sleep(random.randrange(1, 5))
             await dom.send_message(CW_BOT, "🗺Quests")
-
         await go_offline()
         raise events.StopPropagation
 
     elif quest_start in event.raw_text and (quest_started or foray):
-
         await asyncio.sleep(random.randrange(1, 5))
-
-        if quest_started:   #  and button_number is None
-
+        if quest_started:
             quest_type = re.findall(r".*🔥", event.raw_text, flags=re.MULTILINE)
-            
-            if len(quest_type) == 0:
+            if random_quest or button_number is None:
                 button_number = random.randrange(0, 3)
-            elif "Forest" in quest_type[0]:
-                button_number = 0
-            elif "Swamp" in quest_type[0]:
-                button_number = 1
-            elif "Valley" in quest_type[0]:
-                button_number = 2
-
-            await event.click(button_number)
-
+            if quest_type:
+                if "Forest" in quest_type[0]:
+                    button_number = 0
+                elif "Swamp" in quest_type[0]:
+                    button_number = 1
+                elif "Valley" in quest_type[0]:
+                    button_number = 2
+        await event.click(button_number)
         await go_offline()
         raise events.StopPropagation
 
@@ -229,7 +215,7 @@ async def cw(event):
         if stam <= 1:
             foray = False
             await asyncio.sleep(random.randrange(10, 15))
-            # await event.respond("🛡Defend") ...disabling bcz of pn
+            await event.respond("🛡Defend")
         else:
             await asyncio.sleep(random.randrange(10, 15))
             await dom.send_message(CW_BOT, "🗺Quests")
@@ -239,18 +225,20 @@ async def cw(event):
 
 @events.register(events.NewMessage(chats=[BOT_TESTING]))
 async def bot_testing(event):
-
-    global stam, quest_started, arena_started, dice, foray, button_number, tt_qst
-
+    global stam, quest_started, arena_started, dice, foray, button_number, tt_qst, random_quest
     if event.raw_text.startswith("qst"):
         quest_type = event.raw_text.split(" ")
         if len(quest_type) == 1:
+            random_quest = True
             button_number = None
         elif int(quest_type[1]) == 0:
+            random_quest = False
             button_number = 0
         elif int(quest_type[1]) == 1:
+            random_quest = False
             button_number = 1
         elif int(quest_type[1]) == 2:
+            random_quest = False
             button_number = 2
         quest_started = True
         await event.delete()
@@ -290,6 +278,7 @@ async def bot_testing(event):
 
     elif event.raw_text == "foray":
         foray = True
+        random_quest = False
         button_number = 3
         await event.delete()
         await dom.send_message(CW_BOT, "🏅Me")
@@ -310,6 +299,12 @@ async def bot_testing(event):
         await event.delete()
         await go_offline()
         raise events.StopPropagation
+    
+    elif event.raw_text == "stp_tt":
+        tt_qst = False
+        await event.delete()
+        await go_offline()
+        raise events.StopPropagation
 
 
 # @aiocron.crontab("31 4,12,20 * * * ")
@@ -319,18 +314,10 @@ async def start_dice():
 
 @events.register(events.NewMessage(chats=[TYPO_TALES_BOT], incoming=True))
 async def typo_tales(event):
-
     global tt_qst
-
     if ("You return from a bountiful harvest" in event.raw_text or \
         "You found some shiny stones" in event.raw_text) and tt_qst:
         await asyncio.sleep(5, 20)
         await event.click(0)
         await go_offline()
         raise events.StopPropagation
-
-
-# @events.register(events.NewMessage())
-# async def user_bot_testing(event):
-#     if event.chat_id == 1436263237:
-#         print(event.raw_text)
