@@ -6,16 +6,16 @@ import psycopg2
 API_ID     =   os.getenv('API_ID')
 API_HASH   =   os.getenv('API_HASH')
 
-DATABASE_URL    =   os.getenv('DATABASE_URL')
-conn            =   psycopg2.connect(DATABASE_URL, sslmode='require')
-cur             =   conn.cursor()
+# DATABASE_URL    =   os.getenv('DATABASE_URL')
+# conn            =   psycopg2.connect(DATABASE_URL, sslmode='require')
+# cur             =   conn.cursor()
 
 TOKEN = os.getenv('TOKEN')
 bot = TelegramClient('bot', int(API_ID), API_HASH).start(bot_token=TOKEN)
 
 # user bot
 ssn = "user_bot/dom_user_bot"
-dom = TelegramClient(ssn, int(API_ID), API_HASH)#.start()
+dom = TelegramClient(ssn, int(API_ID), API_HASH).start()
  
 runSinceTime = str(datetime.now().strftime("%H:%M:%S"))
 runSinceDate = str(datetime.now().strftime("%d/%m/%y"))

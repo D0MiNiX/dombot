@@ -2,16 +2,12 @@ import re
 import sys
 from datetime import datetime
 from functions import Command, RestartBot, CurrentTime, fun, delay
-import psycopg2
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.users import GetFullUserRequest
 from telethon import events
 import vars as bot_vars
-import aiocron
 from dombot.start import spam_dict
 
-
-# test
 @events.register(events.NewMessage(chats=[bot_vars.D0MiNiX],
                                    from_users=[bot_vars.D0MiNiX], forwards=False))
 async def admin_only(event):
@@ -78,36 +74,6 @@ async def admin_only(event):
         except:
             await event.reply("Couldn't send.")
         raise events.StopPropagation
-
-    elif Command(IncomingRawText, "/sql"):
-        qry = IncomingRawText.split(" ", 1)[1]
-
-        try:
-            bot_vars.cur.execute(qry)
-        except psycopg2.Error as e:
-            bot_vars.conn.rollback()
-            await event.reply('Error : {}'.format(e.pgcode))
-            raise events.StopPropagation
-
-        qry = ""
-        try:
-            if bot_vars.cur.statusmessage.startswith('SELECT'):
-                stsMsg = len(bot_vars.cur.description)  # re.findall(r'\d+', bot_vars.cur.statusmessage)
-                for x in bot_vars.cur.fetchall():
-                    for y in range(0, stsMsg):
-                        qry += str(x[y]) + (' - ' if y < (stsMsg - 1) else '')
-                    qry += '\n\n'
-                await event.reply('Rows affected : ' + str(bot_vars.cur.rowcount) + '\n\n' + qry, parse_mode=None)
-                raise events.StopPropagation
-            else:
-                bot_vars.conn.commit()
-                await event.reply('Query executed successfully. Rows affected : ' + str(bot_vars.cur.rowcount))
-                raise events.StopPropagation
-
-        except psycopg2.Error as e:
-            bot_vars.conn.rollback()
-            await event.reply('Error : {}'.format(e.pgcode))
-            raise events.StopPropagation
 
     elif incomingText == "/restart":
         delay(0.5)

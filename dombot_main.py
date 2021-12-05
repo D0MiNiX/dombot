@@ -4,7 +4,7 @@ import asyncio
 
 def main():
     from dombot.typo_tales.dragon_egg import dragon_egg
-    from dombot import admin, start, regex, equipments, glory, monsters, triggers, user_tz, reminders, region
+    from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, reminders, region
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
