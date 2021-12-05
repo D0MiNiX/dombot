@@ -1,16 +1,12 @@
 from datetime import datetime
 from telethon.sync import TelegramClient
 import os
-import psycopg2
 
-API_ID     =   os.getenv('API_ID')
-API_HASH   =   os.getenv('API_HASH')
+API_ID      =   os.getenv('API_ID')
+API_HASH    =   os.getenv('API_HASH')
+TOKEN       =   os.getenv('TOKEN')
 
-# DATABASE_URL    =   os.getenv('DATABASE_URL')
-# conn            =   psycopg2.connect(DATABASE_URL, sslmode='require')
-# cur             =   conn.cursor()
-
-TOKEN = os.getenv('TOKEN')
+# dombot
 bot = TelegramClient('bot', int(API_ID), API_HASH).start(bot_token=TOKEN)
 
 # user bot

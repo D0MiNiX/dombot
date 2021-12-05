@@ -15,7 +15,6 @@ def main():
     bot.add_event_handler(admin.admin_only)
     bot.add_event_handler(equipments.equips)
     bot.add_event_handler(regex.regex)
-    # bot.add_event_handler(alliance_cw.alliance)
     # bot.add_event_handler(glory.cal_glory)
 
     # reminders
