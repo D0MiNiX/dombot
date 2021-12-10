@@ -174,9 +174,8 @@ async def cw(event):
     elif quest_start in event.raw_text and (quest_started or foray):
         await asyncio.sleep(random.randrange(1, 5))
         if quest_started:
-            quest_type = re.findall(r".*🔥", event.raw_text, flags=re.MULTILINE)
-            if random_quest or button_number is None:
-                button_number = random.randrange(0, 3)
+            # for noble hat
+            quest_type = re.findall(r".*🎩", event.raw_text, flags=re.MULTILINE)
             if quest_type:
                 if "Forest" in quest_type[0]:
                     button_number = 0
@@ -184,6 +183,8 @@ async def cw(event):
                     button_number = 1
                 elif "Valley" in quest_type[0]:
                     button_number = 2
+            elif random_quest or button_number is None:
+                button_number = random.randrange(0, 3)
         await event.click(button_number)
         await go_offline()
         raise events.StopPropagation
@@ -272,7 +273,7 @@ async def bot_testing(event):
             rage = aiocron.crontab(f"{minute} 12 * * *", func=rage_up, start=True)
         elif current_hour <= 20:
             rage = aiocron.crontab(f"{minute} 20 * * *", func=rage_up, start=True)
-        
+
         await event.delete()
         raise events.StopPropagation
 
@@ -293,13 +294,13 @@ async def bot_testing(event):
             await dom.send_message(CW_BOT, cmd)
             await asyncio.sleep(2, 4)
         await go_offline()
-    
+
     elif event.raw_text == "tt_qst":
         tt_qst = True
         await event.delete()
         await go_offline()
         raise events.StopPropagation
-    
+
     elif event.raw_text == "stp_tt":
         tt_qst = False
         await event.delete()
