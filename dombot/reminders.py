@@ -347,10 +347,10 @@ async def reminders(event):
         if dum:
             await cleanup(event, db, "Reminders not found.")
 
-        for name, id in reminders_list:
+        for name, rem_id in reminders_list:
             found = True
-            info = scheduler.get_job(id)
-            name = info.name
+            info = scheduler.get_job(rem_id)
+            rem_name = info.name
             if info.next_run_time:
                 next_run_time = f"\nNext run time: {info.next_run_time.strftime('%d/%m/%y %H:%M:%S')}"
                 info_time = info.next_run_time.strftime('%d/%m/%y %H:%M:%S')
@@ -371,7 +371,7 @@ async def reminders(event):
                 interval = f"Every {interval}"
             will_start_on = f"Will start on {start_time}\n\n" if start_time else ""
             status = ("Running" if not message_info["paused"] else "Paused") + ("\n" if will_start_on else "\n\n")
-            string +=   f"{n}. `{name}`" + \
+            string +=   f"{n}. `{rem_name}`" + \
                         f"{next_run_time}{remaining_time}\nRepeating: {interval}\nStatus: {status}" + \
                         f"{will_start_on}"
             n += 1
