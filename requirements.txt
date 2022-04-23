@@ -2,7 +2,7 @@ arrow
 emoji-country-flag
 demoji
 Pillow
-telethon
+telethon==1.20
 requests
 aiocron
 beautifulsoup4
