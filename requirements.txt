@@ -1,3 +1,7 @@
+arrow
+emoji-country-flag
+demoji
+Pillow
 telethon
 requests
 aiocron
