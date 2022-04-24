@@ -9,6 +9,7 @@ from datetime import datetime
 
 
 # CW
+state=True
 BOT_TESTING = -1001460951730
 TYPO_TALES_BOT = 1436263237
 ForayText = "You were strolling around on your horse when you noticed"
@@ -124,7 +125,10 @@ def clear_variables():
 async def cw(event):
 
     global stam, quest_started, arena_started, dice, monster_fight, foray, foray_results, quest_over, \
-        qst_txts, button_number, me_regex, random_quest
+        qst_txts, button_number, me_regex, random_quest, state
+
+    if not state:
+        return
 
     if "🎲You threw the dice on the table:" in event.raw_text or "No one sat down next to you =/" in \
             event.raw_text:
@@ -226,7 +230,20 @@ async def cw(event):
 
 @events.register(events.NewMessage(chats=[BOT_TESTING]))
 async def bot_testing(event):
-    global stam, quest_started, arena_started, dice, foray, button_number, tt_qst, random_quest
+    global stam, state, quest_started, arena_started, dice, foray, button_number, tt_qst, random_quest
+ 
+    if event.raw_text == "/toggle":
+        await event.delete()
+        if state:
+            state = False
+            await event.respond("User bot disabled")
+        else:
+            state = True
+            await event.respond("User bot enabled")
+
+    if not state:
+        return
+
     if event.raw_text.startswith("qst"):
         quest_type = event.raw_text.split(" ")
         if len(quest_type) == 1:
