@@ -200,19 +200,15 @@ cw2 = ChatWars(CW_BOT)
 cw_elite = ChatWars(CW_ELITE_BOT)
 
 
-@events.register(events.NewMessage(chats=[CW_BOT, CW_ELITE_BOT],  from_users=[CW_BOT, CW_ELITE_BOT]))
+@events.register(events.NewMessage(chats=[CW_BOT, CW_ELITE_BOT], from_users=[CW_BOT, CW_ELITE_BOT]))
 async def cw(event):
 
     global cw_elite, cw2
     global qst_txts, foray_results, quest_over, monster_fight, arena_text
     global stam_full_text, foray_intervene, quest_start_txt, accept_tribute_txt
     global me_regex
-    cw = None
 
-    if event.chat_id == CW_BOT:
-        cw = cw2
-    elif event.chat_id == CW_ELITE_BOT:
-        cw = cw_elite
+    cw = cw2 if event.chat_id == CW_BOT else cw_elite
 
     if stam_full_text in event.raw_text:
         await cw.stam_full(event)
@@ -261,10 +257,7 @@ async def bot_testing(event):
     global cw2, cw_elite
     cw = None
 
-    if event.raw_text.endswith("_e"):
-        cw = cw_elite
-    else:
-        cw = cw2
+    cw = cw_elite if event.raw_text.endswith("_e") else cw2
 
     if event.raw_text.startswith("qst"):
         quest_type = event.raw_text.split(" ")
