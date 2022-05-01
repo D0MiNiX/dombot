@@ -7,24 +7,14 @@ import aiocron
 import re
 from datetime import datetime
 
-
-# CW
-state=True
 BOT_TESTING = -1001460951730
-TYPO_TALES_BOT = 1436263237
-ForayText = "You were strolling around on your horse when you noticed"
+CW_ELITE_BOT = 5233916499
 CW_BOT = 408101137
-quest_start = "Arena isn't a place for the weak. Here you fight against other players and if you stand victorious, you acquire precious experience."
-quest_started = False
-arena_started = False
-dice = False
-foray = False
-pathfinder = "Being a naturally born pathfinder, you found a secret passage and saved some energy +1🔋"
-stam = 0
-rage = None
-button_number = None
-random_quest = False
-me_regex = re.compile(r".* \w*\s*of \w+ Castle")
+me_regex = re.compile(r"Battle of the (five|seven) castles in")
+stam_full_text = "Stamina restored. You are ready for more adventures!"
+foray_intervene = "You were strolling around on your horse when you noticed"
+quest_start_txt = "Arena isn't a place for the weak. Here you fight against other players and if you stand victorious, you acquire precious experience."
+accept_tribute_txt = "To accept their offer, you shall /pledge to protect."
 
 foray_results = [
     "was completely clueless. Village was successfully pillaged",
@@ -86,122 +76,170 @@ qst_txts = [
     'Being a naturally bad pathfinder, you got lost'
 ]
 
-# TypoTales
-tt_qst = False
+arena_text = [
+    "Leaderboard of fighters are updated: /top5 & /top6",
+    "You didn’t find an opponent. Return later."
+]
 
+class ChatWars:
+    lost_torch_text = "You were looking at the bright sparks emitted from the flame of your torch"
+    pathfinder = "Being a naturally born pathfinder, you found a secret passage and saved some energy +1🔋"
 
-async def go_offline():
-    await asyncio.sleep(2)
-    await dom(functions.account.UpdateStatusRequest(offline=True))
+    def __init__(self, bot_id):
+        self.bot_id = bot_id
+        self.quest_started = False
+        self.button_number = False
+        self.random_quest = False
+        self.foray_someone = False
+        self.arena_started = False
+        self.stam = 0
 
+    async def go_offline(self):
+        await asyncio.sleep(2)
+        await dom(functions.account.UpdateStatusRequest(offline=True))
 
-async def go_online():
-    await asyncio.sleep(2)
-    await dom(functions.account.UpdateStatusRequest(offline=False))
+    async def go_online(self):
+        await asyncio.sleep(2)
+        await dom(functions.account.UpdateStatusRequest(offline=False))
 
+    async def stam_full(self, event):
+        self.quest_started = True
+        await asyncio.sleep(random.randrange(10, 15))
+        await event.respond("🏅Me")
 
-async def rage_up():
-    await dom.send_message(CW_BOT, "/use_p01")
-    await asyncio.sleep(5)
-    await dom.send_message(CW_BOT, "/use_p02")
-    await asyncio.sleep(5)
-    await dom.send_message(CW_BOT, "/use_p03")
-    await go_offline()
-    if rage is not None:
-        rage.stop()
-
-
-def clear_variables():
-    global stam, quest_started, arena_started, dice, foray, button_number
-    stam = 0
-    quest_started = False
-    arena_started = False
-    dice = False
-    foray = False
-    button_number = None
-
-
-@events.register(events.NewMessage(chats=CW_BOT, from_users=CW_BOT))
-async def cw(event):
-
-    global stam, quest_started, arena_started, dice, monster_fight, foray, foray_results, quest_over, \
-        qst_txts, button_number, me_regex, random_quest, state
-
-    if not state:
-        return
-
-    if "🎲You threw the dice on the table:" in event.raw_text or "No one sat down next to you =/" in \
-            event.raw_text:
-        await asyncio.sleep(random.randrange(1, 5))
-        if dice:
-            await event.respond("🎲Play some dice")
-        else:
-            await event.respond("🛡Defend")
-        await go_offline()
-        raise events.StopPropagation
-
-    elif ForayText in event.raw_text:
+    async def stop_foray(self, event):
         await asyncio.sleep(random.randrange(15, 25))
-        await go_online()
+        await self.go_online()
         await event.click(0)
-        await go_offline()
-        raise events.StopPropagation
+        await self.go_offline()
 
-    elif me_regex.search(event.raw_text) and (quest_started or foray):
-        stam = int(re.findall(r"(?:🔋Stamina: )(\d+)/(?:\d+)", event.raw_text)[0])
-        if stam > 0:
+    async def start_quest(self, event):
+        self.stam = int(re.findall(r"(?:🔋Stamina: )(\d+)/(?:\d+)",  event.raw_text)[0])
+
+        if self.stam > 0:
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("🗺Quests")
-            await go_offline()
+            await self.go_offline()
         else:
-            quest_started = False
-            foray = False
-            await bot.send_message(BOT_TESTING, "No stam dude.")
-        raise events.StopPropagation
+            self.quest_started = False
+            self.foray_someone = False
 
-    elif list_string_in_text(event.raw_text, qst_txts) and not arena_started:
-        if "You were looking at the bright sparks emitted from the flame of your torch" in event.raw_text:
+    async def send_quest(self, event):
+        if eval(__class__.__name__).lost_torch_text in event.raw_text:
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("/on_tch")
-        if pathfinder not in event.raw_text:
-            stam -= 1
-        if stam <= 0 or not quest_started:
-            quest_started = False
+
+        if eval(__class__.__name__).pathfinder not in event.raw_text:
+         self.stam -= 1
+
+        if self.stam <= 0 or not self.quest_started:
+            self.quest_started = False
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("🛡Defend")
         else:
             await asyncio.sleep(random.randrange(1, 5))
-            await dom.send_message(CW_BOT, "🗺Quests")
-        await go_offline()
-        raise events.StopPropagation
+            await dom.send_message(self.bot_id, "🗺Quests")
 
-    elif quest_start in event.raw_text and (quest_started or foray):
+        await self.go_offline()
+
+    async def click_quest(self, event):
         await asyncio.sleep(random.randrange(1, 5))
-        if quest_started:
-            # for noble hat
-            quest_type = re.findall(r".*🎩", event.raw_text, flags=re.MULTILINE)
+
+        if self.quest_started:
+            self.button_number = None
+            quest_type = None # re.findall(r".*🎩", event.raw_text, flags=re.MULTILINE)    # for noble hat
+
             if quest_type:
                 if "Forest" in quest_type[0]:
-                    button_number = 0
+                    self.button_number = 0
                 elif "Swamp" in quest_type[0]:
-                    button_number = 1
+                    self.button_number = 1
                 elif "Valley" in quest_type[0]:
-                    button_number = 2
-            elif random_quest or button_number is None:
-                button_number = random.randrange(0, 3)
-        await event.click(button_number)
-        await go_offline()
+                    self.button_number = 2
+            elif self.random_quest or self.button_number is None:
+                    self.button_number = random.randrange(0, 3)
+
+        # TODO: Temp fix
+        if self.bot_id == CW_ELITE_BOT:
+            self.button_number = 0
+ 
+        await event.click(self.button_number)
+        await self.go_offline()
+
+    async def fast_fight(self, event):
+        await asyncio.sleep(random.randrange(1, 5))
+        await dom.send_message(self.bot_id, "▶️Fast fight")
+        await self.go_offline()
+
+    async def pledge(self, event):
+        await asyncio.sleep(2)
+        await event.respond("/pledge")
+        await self.go_offline()
+
+    async def go_foray_someone(self, event):
+        self.stam -= 2
+
+        if self.stam <= 1:
+            self.foray_someone = False
+            await asyncio.sleep(random.randrange(10, 15))
+            await event.respond("🛡Defend")
+        else:
+            await asyncio.sleep(random.randrange(10, 15))
+            await dom.send_message(self.bot_id, "🗺Quests")
+
+        await self.go_offline()
+
+    def clear_state(self):
+        self.stam = 0
+        self.quest_started = False
+        self.foray_someone = False
+        self.arena_started = False
+
+
+cw2 = ChatWars(CW_BOT)
+cw_elite = ChatWars(CW_ELITE_BOT)
+
+
+@events.register(events.NewMessage(chats=[CW_BOT, CW_ELITE_BOT],  from_users=[CW_BOT, CW_ELITE_BOT]))
+async def cw(event):
+
+    global cw_elite, cw2
+    global qst_txts, foray_results, quest_over, monster_fight, arena_text
+    global stam_full_text, foray_intervene, quest_start_txt, accept_tribute_txt
+    global me_regex
+    cw = None
+
+    if event.chat_id == CW_BOT:
+        cw = cw2
+    elif event.chat_id == CW_ELITE_BOT:
+        cw = cw_elite
+
+    if stam_full_text in event.raw_text:
+        await cw.stam_full(event)
         raise events.StopPropagation
 
-    elif ("Leaderboard of fighters are updated: /top5 & /top6" in event.raw_text or \
-            "You didn’t find an opponent. Return later." in event.raw_text) and arena_started:
-        await asyncio.sleep(random.randrange(1, 5))
-        await dom.send_message(CW_BOT, "▶️Fast fight")
-        await go_offline()
+    elif foray_intervene in event.raw_text:
+        await cw.stop_foray(event)
+        raise events.StopPropagation
+
+    elif me_regex.search(event.raw_text) and (cw.quest_started or cw.foray_someone):
+        await cw.start_quest(event)
+        raise events.StopPropagation
+
+    elif list_string_in_text(event.raw_text, qst_txts) and not cw.arena_started:
+        await cw.send_quest(event)
+        raise events.StopPropagation
+
+    elif quest_start_txt in event.raw_text and (cw.quest_started or cw.foray_someone):
+        await cw.click_quest(event)
+        raise events.StopPropagation
+
+    elif list_string_in_text(event.raw_text, arena_text):
+        await cw.fast_fight(event)
         raise events.StopPropagation
 
     elif list_string_in_text(event.raw_text, quest_over):
-        clear_variables()
+        cw.clear_state()
         raise events.StopPropagation
 
     elif list_string_in_text(event.raw_text, monster_fight):
@@ -209,98 +247,78 @@ async def cw(event):
         await event.click(1)
         raise events.StopPropagation
 
-    elif "To accept their offer, you shall /pledge to protect." in event.raw_text:
-        await asyncio.sleep(2)
-        await event.respond("/pledge")
-        await go_offline()
+    elif accept_tribute_txt in event.raw_text:
+        await cw.pledge(event)
         raise events.StopPropagation
 
     elif list_string_in_text(event.raw_text, foray_results):
-        stam -= 2
-        if stam <= 1:
-            foray = False
-            await asyncio.sleep(random.randrange(10, 15))
-            await event.respond("🛡Defend")
-        else:
-            await asyncio.sleep(random.randrange(10, 15))
-            await dom.send_message(CW_BOT, "🗺Quests")
-        await go_offline()
+        await cw.go_foray_someone(event)
         raise events.StopPropagation
 
 
 @events.register(events.NewMessage(chats=[BOT_TESTING]))
 async def bot_testing(event):
-    global stam, state, quest_started, arena_started, dice, foray, button_number, tt_qst, random_quest
- 
-    if event.raw_text == "/toggle":
-        await event.delete()
-        if state:
-            state = False
-            await event.respond("User bot disabled")
-        else:
-            state = True
-            await event.respond("User bot enabled")
+    global cw2, cw_elite
+    cw = None
 
-    if not state:
-        return
+    if event.raw_text.endswith("_e"):
+        cw = cw_elite
+    else:
+        cw = cw2
 
     if event.raw_text.startswith("qst"):
         quest_type = event.raw_text.split(" ")
+
         if len(quest_type) == 1:
-            random_quest = True
-            button_number = None
+            cw.random_quest = True
+            cw.button_number = None
         elif int(quest_type[1]) == 0:
-            random_quest = False
-            button_number = 0
+            cw.random_quest = False
+            cw.button_number = 0
         elif int(quest_type[1]) == 1:
-            random_quest = False
-            button_number = 1
+            cw.random_quest = False
+            cw.button_number = 1
         elif int(quest_type[1]) == 2:
-            random_quest = False
-            button_number = 2
-        quest_started = True
+            cw.random_quest = False
+            cw.button_number = 2
+
+        cw.quest_started = True
         await event.delete()
-        await dom.send_message(CW_BOT, "🏅Me")
-        await go_offline()
+        await dom.send_message(cw.bot_id, "🏅Me")
+        await cw.go_offline()
         raise events.StopPropagation
 
-    elif event.raw_text == "stp":
-        clear_variables()
-        await event.delete()
-        raise events.StopPropagation
-
-    elif event.raw_text == "arn":
-        arena_started = True
-        await dom.send_message(CW_BOT, "▶️Fast fight")
+    elif event.raw_text.startswith("stp"):
+        cw.clear_state()
         await event.delete()
         raise events.StopPropagation
 
-    elif event.raw_text == "dice":
-        dice = True
-        await dom.send_message(CW_BOT, "🎲Play some dice")
+    elif event.raw_text.startswith("arn"):
+        cw.arena_started = True
+        await dom.send_message(cw.bot_id, "▶️Fast fight")
         await event.delete()
         raise events.StopPropagation
 
-    elif event.raw_text == "rage":
-        current_hour = datetime.now().hour
-        minute = random.randrange(10, 20)
-        if current_hour <= 4 or (20 <= current_hour <= 23):
-            rage = aiocron.crontab(f"{minute} 4 * * *", func=rage_up, start=True)
-        elif current_hour <= 12:
-            rage = aiocron.crontab(f"{minute} 12 * * *", func=rage_up, start=True)
-        elif current_hour <= 20:
-            rage = aiocron.crontab(f"{minute} 20 * * *", func=rage_up, start=True)
+    # elif event.raw_text.startswith("rage"):
+    #     current_hour = datetime.now().hour
+    #     minute = random.randrange(10, 20)
+    #     if current_hour <= 4 or (20 <= current_hour <= 23):
+    #         rage = aiocron.crontab(f"{minute} 4 * * *", func=rage_up, start=True)
+    #     elif current_hour <= 12:
+    #         rage = aiocron.crontab(f"{minute} 12 * * *", func=rage_up, start=True)
+    #     elif current_hour <= 20:
+    #         rage = aiocron.crontab(f"{minute} 20 * * *", func=rage_up, start=True)
+    # 
+    #     await event.delete()
+    #     raise events.StopPropagation
 
+    elif event.raw_text.startswith("foray"):
+        cw.foray_someone = True
+        cw.random_quest = False
+        cw.button_number = 3
         await event.delete()
-        raise events.StopPropagation
-
-    elif event.raw_text == "foray":
-        foray = True
-        random_quest = False
-        button_number = 3
-        await event.delete()
-        await dom.send_message(CW_BOT, "🏅Me")
-        await go_offline()
+        await dom.send_message(cw.bot_id, "🏅Me")
+        await cw.go_offline()
         raise events.StopPropagation
 
     elif Command(event.raw_text, "cft"):
@@ -308,34 +326,6 @@ async def bot_testing(event):
         stock_num = event.raw_text.split(" ")[1]
         cmd = f"/c_{stock_num}"
         for x in range(0, 5):
-            await dom.send_message(CW_BOT, cmd)
+            await dom.send_message(cw.bot_id, cmd)
             await asyncio.sleep(2, 4)
-        await go_offline()
-
-    elif event.raw_text == "tt_qst":
-        tt_qst = True
-        await event.delete()
-        await go_offline()
-        raise events.StopPropagation
-
-    elif event.raw_text == "stp_tt":
-        tt_qst = False
-        await event.delete()
-        await go_offline()
-        raise events.StopPropagation
-
-
-# @aiocron.crontab("31 4,12,20 * * * ")
-async def start_dice():
-    await dom.send_message(CW_BOT, "🎲Play some dice")
-
-
-@events.register(events.NewMessage(chats=[TYPO_TALES_BOT], incoming=True))
-async def typo_tales(event):
-    global tt_qst
-    if ("You return from a bountiful harvest" in event.raw_text or \
-        "You found some shiny stones" in event.raw_text) and tt_qst:
-        await asyncio.sleep(5, 20)
-        await event.click(0)
-        await go_offline()
-        raise events.StopPropagation
+        await cw.go_offline()

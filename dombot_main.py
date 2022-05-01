@@ -49,7 +49,6 @@ def main():
 
     # dom user bot
     dom.add_event_handler(blek_magic.cw)
-    dom.add_event_handler(blek_magic.typo_tales)
     dom.add_event_handler(blek_magic.bot_testing)
     dom.add_event_handler(report_leaders.cw_report_channel)
 
@@ -59,11 +58,7 @@ def main():
     bot.send_message(D0MiNiX, "`commenced`")
     print("commenced")
 
-    try:
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        asyncio.get_event_loop().stop()
-        print("Shutting down...")
+    dom.run_until_disconnected()
 
 
 if __name__ == '__main__':
