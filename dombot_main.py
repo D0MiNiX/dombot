@@ -1,5 +1,4 @@
 from vars import bot, dom, D0MiNiX
-import asyncio
 
 
 def main():
