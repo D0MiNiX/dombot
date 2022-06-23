@@ -256,9 +256,15 @@ async def equips(event):
         equipped = []
         bag = []
         new_line = "\n"
-        user_name = event.raw_text.split(" ", 1)[1]
-        string = ",".join([k for k in slot_dict.keys()])
+        user_name = event.raw_text.split(" ", 1)
         
+        if not len(user_name) > 1:
+            await event.reply("Give username too!")
+            raise events.StopPropagation
+
+        user_name = user_name[1]
+        string = ",".join([k for k in slot_dict.keys()])
+
         equips = db.select(f"SELECT {string} from {GUILD_EQUIPS} WHERE user_name = '{user_name}'")
         await check_db_error(db, event, equips)
         equips = [k for k in equips][0]

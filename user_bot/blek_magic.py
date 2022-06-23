@@ -1,11 +1,18 @@
 from telethon import events, functions
-from vars import dom, bot
-from functions import list_string_in_text, Command
+from vars import D0MiNiX, dom, bot
+from functions import list_string_in_text, Command, command_with_args
 import asyncio
 import random
 import aiocron
-import re
+import re, platform
 from datetime import datetime
+
+IS_LINUX = True
+
+if platform.system() == "Windows":
+    IS_LINUX = False
+else:
+    import redis
 
 BOT_TESTING = -1001460951730
 CW_ELITE_BOT = 5233916499
@@ -15,6 +22,7 @@ stam_full_text = "Stamina restored. You are ready for more adventures!"
 foray_intervene = "You were strolling around on your horse when you noticed"
 quest_start_txt = "Arena isn't a place for the weak. Here you fight against other players and if you stand victorious, you acquire precious experience."
 accept_tribute_txt = "To accept their offer, you shall /pledge to protect."
+CARAVAN_TEXT = "he is leaving to distant lands and his caravan can only carry"
 
 foray_results = [
     "was completely clueless. Village was successfully pillaged",
@@ -130,7 +138,7 @@ class ChatWars:
             await event.respond("/on_tch")
 
         if eval(__class__.__name__).pathfinder not in event.raw_text:
-         self.stam -= 1
+            self.stam -= 1
 
         if self.stam <= 0 or not self.quest_started:
             self.quest_started = False
@@ -159,10 +167,6 @@ class ChatWars:
             elif self.random_quest or self.button_number is None:
                     self.button_number = random.randrange(0, 3)
 
-        # TODO: Temp fix
-        if self.bot_id == CW_ELITE_BOT:
-            self.button_number = 0
- 
         await event.click(self.button_number)
         await self.go_offline()
 
@@ -178,7 +182,6 @@ class ChatWars:
 
     async def go_foray_someone(self, event):
         self.stam -= 2
-
         if self.stam <= 1:
             self.foray_someone = False
             await asyncio.sleep(random.randrange(10, 15))
@@ -187,6 +190,20 @@ class ChatWars:
             await asyncio.sleep(random.randrange(10, 15))
             await dom.send_message(self.bot_id, "🗺Quests")
 
+        await self.go_offline()
+
+    async def sell_stock_to_trader(self, event):
+        if not IS_LINUX:
+            return
+        quant = int(re.findall(r"only carry (\d+)", event.raw_text)[0])
+        await asyncio.sleep(random.randrange(10, 15))
+        rds = redis.Redis(decode_responses=True)
+
+        if rds.exists("stock"):
+            item = rds.get("stock")
+            await event.respond(f"/sc {item} {quant}")
+
+        rds.close()
         await self.go_offline()
 
     def clear_state(self):
@@ -200,13 +217,18 @@ cw2 = ChatWars(CW_BOT)
 cw_elite = ChatWars(CW_ELITE_BOT)
 
 
+@events.register(events.NewMessage())
+async def print_id(event):
+    print(event.chat_id)
+
+
 @events.register(events.NewMessage(chats=[CW_BOT, CW_ELITE_BOT], from_users=[CW_BOT, CW_ELITE_BOT]))
 async def cw(event):
 
     global cw_elite, cw2
     global qst_txts, foray_results, quest_over, monster_fight, arena_text
     global stam_full_text, foray_intervene, quest_start_txt, accept_tribute_txt
-    global me_regex
+    global me_regex, CARAVAN_TEXT
 
     cw = cw2 if event.chat_id == CW_BOT else cw_elite
 
@@ -249,6 +271,10 @@ async def cw(event):
 
     elif list_string_in_text(event.raw_text, foray_results):
         await cw.go_foray_someone(event)
+        raise events.StopPropagation
+
+    elif CARAVAN_TEXT in event.raw_text:
+        await cw.sell_stock_to_trader(event)
         raise events.StopPropagation
 
 
@@ -318,7 +344,40 @@ async def bot_testing(event):
         await event.delete()
         stock_num = event.raw_text.split(" ")[1]
         cmd = f"/c_{stock_num}"
-        for x in range(0, 5):
+        for _ in range(0, 5):
             await dom.send_message(cw.bot_id, cmd)
             await asyncio.sleep(2, 4)
         await cw.go_offline()
+
+    elif command_with_args(event.raw_text, "set_sc"):   # Only for CW2
+        if not IS_LINUX:
+            return
+        await event.delete()
+        data = event.raw_text.split(' ', 1)
+        if len(data) < 2:
+            await event.respond("Usage: `/set_sc <item_number>`")
+            raise events.StopPropagation
+
+        try:
+            item_num = data[1]
+        except:
+            await event.respond("Invalid item number.")
+            raise events.StopPropagation
+        
+        rds = redis.Redis(decode_responses=True)
+        
+        try:
+            rds.ping()
+        except redis.exceptions.ConnectionError:
+            msg = await event.respond("Error connecting to redis server.")
+            await asyncio.sleep(3)
+            await dom.delete_messages(event.chat_id, message_ids=[msg.id])
+            raise events.StopPropagation
+
+        rds.set("stock", f"{item_num}")
+        rds.close()
+        msg = await event.respond(f"Stock set to {item_num}.")
+        await asyncio.sleep(3)
+        await dom.delete_messages(event.chat_id, message_ids=[msg.id])
+        raise events.StopPropagation
+
