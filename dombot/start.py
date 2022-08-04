@@ -135,19 +135,19 @@ async def start(event):
                 raise events.StopPropagation
 
     elif cmd("help"):
-        f = open(f"{HELP_FOLDER}/general.txt")
+        f = open(f"{HELP_FOLDER}/general.txt", "r", encoding="utf-8")
         await event.reply(f.read())
         f.close()
         raise events.StopPropagation
 
     elif cmd("cw_help"):
-        f = open(f"{HELP_FOLDER}/cw.txt")
+        f = open(f"{HELP_FOLDER}/cw.txt", encoding="utf-8")
         await event.reply(f.read())
         f.close()
         raise events.StopPropagation
 
     elif cmd("cw_mobs_help"):
-        f = open(f"{HELP_FOLDER}/monsters_and_ambush.txt")
+        f = open(f"{HELP_FOLDER}/monsters_and_ambush.txt", encoding="utf-8")
         await event.reply(f.read())
         f.close()
         raise events.StopPropagation

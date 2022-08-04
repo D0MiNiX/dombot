@@ -3,10 +3,9 @@ from telethon import events, Button
 import re
 import vars
 import asyncio
-import sqlite3 as db
+# import sqlite3 as db
 from database import Database
 from functions import cleanup, check_db_error
-
 
 # db overview
 # guild_data -> grp_id (int), guild (varchar(3)), monster (bool), ambush (bool)
@@ -229,6 +228,7 @@ async def fight(event):
         mob = await event.respond(text, buttons=markup)
         db.close_all()
 
+        print("Caught ambush fight in:", event.chat_id)
         await vars.bot.pin_message(entity=event.chat_id, message=mob.id)
         await asyncio.sleep(AMBUSH_TIMEOUT - seconds_passed)
         await vars.bot.unpin_message(entity=event.chat_id, message=mob.id)
@@ -265,7 +265,10 @@ async def fight(event):
             await event.respond(" ".join(ping_list[i:i + MAX_PIN_PER_MSG]))
             await asyncio.sleep(0.5)
 
+        print("Caught monster fight in:", event.chat_id) 
         await cleanup(event, db)
+
+    db.close_all()
 
 
 @events.register(events.NewMessage(

@@ -81,7 +81,6 @@ async def tts(event):
             print(e)
             await event.reply("Something went wrong. Make sure there are no special characters in text. When used as reply, " \
                               "provide language code as an argument, eg. `/tts ja`.")
-            await events.StopPropagation
-        
+
         raise events.StopPropagation
 

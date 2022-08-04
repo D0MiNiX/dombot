@@ -303,6 +303,22 @@ async def bot_testing(event):
 
         cw.quest_started = True
         await event.delete()
+
+#        try:
+#            x = await dom.get_entity(CW_ELITE_BOT)
+#            print(x)
+#        except ValueError:
+#            print('Error as expected')
+#
+#        x = await dom.get_entity("ChatWarsEliteBot")
+#        print(" ")
+#        print(x)
+#        print(" ")
+#        x = await dom.get_entity(CW_ELITE_BOT)
+#        print(x)
+#        print('Works as expected')
+#        print(cw.bot_id)
+
         await dom.send_message(cw.bot_id, "🏅Me")
         await cw.go_offline()
         raise events.StopPropagation
