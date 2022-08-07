@@ -29,7 +29,7 @@ def main():
     bot.add_event_handler(monsters.register)
     bot.add_event_handler(monsters.commands)
     bot.add_event_handler(monsters.reports)
-    
+
     # user join/leaves group
     bot.add_event_handler(start.user_action)
 
