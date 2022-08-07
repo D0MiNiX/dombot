@@ -407,7 +407,7 @@ def calc_rem_time(fwd_time):
 @events.register(events.NewMessage(incoming=True, forwards=True, func=lambda e: pre_check_reports_fwds(e)))
 async def reports(event):
     sender_username = await get_sender_username(event)
-    detected_level = None
+    detected_level, player_level = None, None
     cw_type = ""
 
     seconds_passed = calc_rem_time(event.message.forward.date)
@@ -437,11 +437,15 @@ async def reports(event):
     if sender_username not in users_list:
         raise events.StopPropagation
 
-    users_data[sender_username] = detected_level
-    r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-    r.bgsave()
-    await event.respond(f"Updated new level of `{sender_username}` "
-                        f"to {detected_level} successfully.")
+    player_level = int(users_data[sender_username])
+
+    if player_level != detected_level:
+        users_data[sender_username] = detected_level
+        r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
+        r.bgsave()
+        await event.respond(f"Updated new level of `{sender_username}` "
+                            f"to {detected_level} successfully.")
+
     raise events.StopPropagation
 
 def calc_passed_time(time_elapsed, timeout):
@@ -550,7 +554,7 @@ async def fight(event):
 
         if ret:
             fight_type = json.loads(ret)
-            if not fight_type[str(event.chat_id)][0]:
+            if not fight_type[str(event.chat_id)][1]:
                 raise events.StopPropagation
 
         if "Forbidden Champion" in event.raw_text:
@@ -604,7 +608,7 @@ async def fight(event):
 
         if ret:
             fight_type = json.loads(ret)
-            if not fight_type[str(event.chat_id)][1]:
+            if not fight_type[str(event.chat_id)][0]:
                 raise events.StopPropagation
 
         ret = r.hget(hash_key, str(event.chat_id))
@@ -631,5 +635,5 @@ async def fight(event):
             await event.respond(" ".join(ping_list[i:i + MAX_PIN_PER_MSG]))
             await asyncio.sleep(0.5)
 
-        print("[{cw_type}] Caught monster fight in:", event.chat_id)
+        print(f"[{cw_type}] Caught monster fight in:", event.chat_id)
         raise events.StopPropagation
