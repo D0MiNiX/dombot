@@ -6,15 +6,20 @@ import re
 import vars
 import asyncio
 from database import Database
-from functions import cleanup, check_db_error
 
 HASH_KEY = "cw_monster_ambush"
+CWE_HASH_KEY = "cwe_monster_ambush"
+
 HASH_FIELD = "guild_data"
 DFLT_LVL = 25
 REDIS_ON = False
+
 grp_ids_for_hunts = []
+cwe_grp_ids_for_hunts = []
+
 MAX_CONSIDERABLE_LEVEL = 100
 CW_BOT = 408101137 # Chatwars bot
+CW_ELITE_BOT = 5233916499
 MAX_REP_FWD_TIME = 3600
 AMBUSH_TIMEOUT = 360
 MAX_PIN_PER_MSG = 4
@@ -43,21 +48,28 @@ def redis_run(redis_server):
         print("Timed out waiting on redis-server. Server is running!")
         return True
 
+def load_group_ids():
+    global grp_ids_for_hunts, cwe_grp_ids_for_hunts
+
+    # CW
+    ret = r.hget(HASH_KEY, HASH_FIELD)
+    if ret:
+        grp_ids_for_hunts = [int(k) for k in json.loads(ret)]
+
+    # CWE
+    ret = r.hget(CWE_HASH_KEY, HASH_FIELD)
+    if ret:
+        cwe_grp_ids_for_hunts = [int(k) for k in json.loads(ret)]
+
 # Start the redis-server if not started
 if not redis_status():
     print(f"Couldn't connect to redis server! Trying to run the server using `redis-server` command.")
     output = subprocess.Popen(["redis-server"], stdout=subprocess.DEVNULL)
     print(output)
     if redis_run(output):
-        ret = r.hget(HASH_KEY, HASH_FIELD)
-        if ret:
-            grp_ids_for_hunts = [int(k) for k in json.loads(ret)]
-            print(grp_ids_for_hunts)
+        load_group_ids()
 else:
-    ret = r.hget(HASH_KEY, HASH_FIELD)
-    if ret:
-        grp_ids_for_hunts = [int(k) for k in json.loads(ret)]
-        print(grp_ids_for_hunts)
+    load_group_ids()
 
 async def get_sender_username(event):
     if event.sender.username is not None:
@@ -68,17 +80,26 @@ async def get_sender_username(event):
         raise events.StopPropagation
 
 @events.register(events.NewMessage(
-    pattern=r"^(/reg_hunt)$|^(/reg_hunt{})$".format(vars.bot_tag),
+    pattern=r"^(/reg_hunt)$|^(/reg_hunt{})$|^(/reg_hunt_cwe)$|^(/reg_hunt_cwe{})$".format(vars.bot_tag, vars.bot_tag),
     func=lambda e: not e.is_private))
 async def register(event):
-    global r
+    global r, HASH_KEY, CWE_HASH_KEY
 
     if not redis_status():
         await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
         raise events.StopPropagation
 
+    cw_type = ""
+
+    if event.raw_text.endswith("cwe"):
+        cw_type = "elite"
+    else:
+        cw_type = "int"
+
+    hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
+
     group_id = str(event.chat_id)
-    ret = r.hget(HASH_KEY, HASH_FIELD)
+    ret = r.hget(hash_key, HASH_FIELD)
     grp_id = []
 
     if ret:
@@ -89,7 +110,7 @@ async def register(event):
         data = {
             group_id: [1, 1]
         }
-        r.hset(HASH_KEY, HASH_FIELD, json.dumps(data))
+        r.hset(hash_key, HASH_FIELD, json.dumps(data))
     else:
         await event.reply("Group is already registered for the hunts!")
         raise events.StopPropagation
@@ -100,18 +121,23 @@ async def register(event):
         sender_username: DFLT_LVL
     }
 
-    r.hset(HASH_KEY, group_id, json.dumps(data))
+    r.hset(hash_key, group_id, json.dumps(data))
     r.bgsave()
-    grp_ids_for_hunts.append(event.chat_id)
+
+    if cw_type == "int":
+        grp_ids_for_hunts.append(event.chat_id)
+    else:
+        cwe_grp_ids_for_hunts.append(event.chat_id)
+
     await event.reply("Group registered for hunts successfully. Please set your level using `/level <your level>`. I have set it to 25.\nPings for both ambush and monster hunts are turned on. If you prefer to disable them, use `/monster off` or `/ambush off`.")
     raise events.StopPropagation
 
-@events.register(events.NewMessage(pattern=r"^\/\S+.*", func=lambda e: e.chat_id in grp_ids_for_hunts))
+@events.register(events.NewMessage(pattern=r"^\/\S+.*", func=lambda e: e.chat_id in grp_ids_for_hunts or e.chat_id in cwe_grp_ids_for_hunts))
 async def commands(event):
     global r
     event_text = event.raw_text
 
-    if re.match(r"^(/ambush)\s\w+$|^(/monster)\s\w+$|^(/ambush{})\s\w+$|^(/monster{})\s\w+$"
+    if re.match(r"^(/ambush)\s\w+$|^(/monster)\s\w+$|^(/ambush{})\s\w+$|^(/monster{})\s\w+$".format(vars.bot_tag, vars.bot_tag) + r"^|(/ambush_cwe)\s\w+$|^(/monster_cwe)\s\w+$|^(/ambush_cwe{})\s\w+$|^(/monster_cwe{})\s\w+$"
                         .format(vars.bot_tag, vars.bot_tag), event.raw_text):
         if not redis_status():
             await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
@@ -123,7 +149,15 @@ async def commands(event):
         option = data[1].lower()
         users_data = {}
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        cw_type = ""
+        if data[0].endswith("cwe"):
+            cw_type = "elite"
+        else:
+            cw_type = "int"
+
+        hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
+
+        ret = r.hget(hash_key, str(event.chat_id))
         users_list = []
 
         if ret:
@@ -135,20 +169,20 @@ async def commands(event):
             raise events.StopPropagation
 
         if option == "on":
-            ret = r.hget(HASH_KEY, HASH_FIELD)
+            ret = r.hget(hash_key, HASH_FIELD)
             toggle_hunt = json.loads(ret)
             stored_val = toggle_hunt[str(event.chat_id)]
             toggle_hunt[str(event.chat_id)] = [1 if change_type == "monster" else stored_val[0],
                                                1 if change_type == "ambush" else stored_val[1]]
-            r.hset(HASH_KEY, HASH_FIELD, json.dumps(toggle_hunt))
+            r.hset(hash_key, HASH_FIELD, json.dumps(toggle_hunt))
             r.bgsave()
         elif option == "off":
-            ret = r.hget(HASH_KEY, HASH_FIELD)
+            ret = r.hget(hash_key, HASH_FIELD)
             toggle_hunt = json.loads(ret)
             stored_val = toggle_hunt[str(event.chat_id)]
             toggle_hunt[str(event.chat_id)] = [0 if change_type == "monster" else stored_val[0],
                                                0 if change_type == "ambush" else stored_val[1]]
-            r.hset(HASH_KEY, HASH_FIELD, json.dumps(toggle_hunt))
+            r.hset(hash_key, HASH_FIELD, json.dumps(toggle_hunt))
             r.bgsave()
         else:
             await event.reply(f"Incorrect options provided. Usage: `/{change_type} <option>`, where option = \"on\" or \"off\".")
@@ -158,8 +192,7 @@ async def commands(event):
         raise events.StopPropagation
 
     # Add players with level
-    elif re.match(r"^(/add_hunter)\s+\S+\s+\d+$|^(/add_hunter{})\s+\S+\s+\d+$".format(vars.bot_tag), \
-                    event.raw_text):
+    elif re.match(r"^(/add_hunter)\s+\S+\s+\d+$|^(/add_hunter{})\s+\S+\s+\d+$".format(vars.bot_tag) + r"|^(/add_hunter_cwe)\s+\S+\s+\d+$|^(/add_hunter_cwe{})\s+\S+\s+\d+$".format(vars.bot_tag), event.raw_text):
         if not redis_status():
             await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
             raise events.StopPropagation
@@ -168,7 +201,15 @@ async def commands(event):
         data = re.split(r"\s+", event.raw_text)
 
         if len(data) != 3:
-            await cleanup(event, db, "Invalid. Usage `/add_hunter <user_name> <level>`.")
+            await event.reply("Invalid. Usage `/add_hunter <user_name> <level>`.")
+
+        cw_type = ""
+        if data[0].endswith("cwe"):
+            cw_type = "elite"
+        else:
+            cw_type = "int"
+
+        hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
 
         user_name = data[1]
         level = data[2]
@@ -184,7 +225,7 @@ async def commands(event):
         if not user_name.startswith('@'):
             user_name = '@' + user_name
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             users_data = json.loads(ret)
@@ -199,13 +240,13 @@ async def commands(event):
             raise events.StopPropagation
 
         users_data[user_name] = level
-        r.hset(HASH_KEY, str(event.chat_id), json.dumps(users_data))
+        r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
         r.bgsave()
         await event.reply(r"Added. \o/")
         raise events.StopPropagation
 
     # Remove players
-    elif re.match(r"^(/rm_hunter)\s+\S+$|^(/rm_hunter{})\s+\S+$".format(vars.bot_tag), event.raw_text):
+    elif re.match(r"^(/rm_hunter)\s+\S+$|^(/rm_hunter{})\s+\S+$".format(vars.bot_tag) + r"|^(/rm_hunter_cwe)\s+\S+$|^(/rm_hunter_cwe{})\s+\S+$".format(vars.bot_tag), event.raw_text):
         if not redis_status():
             await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
             raise events.StopPropagation
@@ -214,14 +255,23 @@ async def commands(event):
         data = re.split(r"\s+", event.raw_text)
 
         if len(data) != 2:
-            await event.reply("Invalid. Usage `/rm <user_name>`.")
+            await event.reply("Invalid. Usage: `/rm <user_name>`.")
+            raise events.StopPropagation
+
+        cw_type = ""
+        if data[0].endswith("cwe"):
+            cw_type = "elite"
+        else:
+            cw_type = "int"
+
+        hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
 
         user_name = data[1]
 
         if not user_name.startswith('@'):
             user_name = '@' + user_name
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             users_data = json.loads(ret)
@@ -236,14 +286,13 @@ async def commands(event):
             raise events.StopPropagation
 
         del users_data[user_name]
-        r.hset(HASH_KEY, str(event.chat_id), json.dumps(users_data))
+        r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
         r.bgsave()
         await event.reply(r"Removed. \o/")
         raise events.StopPropagation
 
     # Set level
-    elif re.match(r"^(/level)(\s+\S+)*(\s+\d+)$|^(/level{})(\s+\S+)*(\s+\d+)$"
-                        .format(vars.bot_tag), event.raw_text):
+    elif re.match(r"^(/level)(\s+\S+)*(\s+\d+)$|^(/level{})(\s+\S+)*(\s+\d+)$".format(vars.bot_tag) + r"|^(/level_cwe)(\s+\S+)*(\s+\d+)$|^(/level_cwe{})(\s+\S+)*(\s+\d+)$".format(vars.bot_tag), event.raw_text):
         if not redis_status():
             await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
             raise events.StopPropagation
@@ -252,9 +301,18 @@ async def commands(event):
         data = re.split(r"\s+", event.raw_text)
         user_name, level = "", ""
 
+        cw_type = ""
+        if data[0].endswith("cwe"):
+            cw_type = "elite"
+        else:
+            cw_type = "int"
+
+        hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
+
         if len(data) == 1:
             await event.reply("Invalid. Usage:\n- For yourself: `/level <level>`\n"
                                 "- For someone else: `/level <user_name> <level>`")
+            raise events.StopPropagation
         elif len(data) == 2:
             level = data[1]
         elif len(data) == 3:
@@ -275,7 +333,7 @@ async def commands(event):
         if not user_name.startswith('@'):
             user_name = '@' + user_name
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             users_data = json.loads(ret)
@@ -290,18 +348,26 @@ async def commands(event):
             raise events.StopPropagation
 
         users_data[user_name] = level
-        r.hset(HASH_KEY, str(event.chat_id), json.dumps(users_data))
+        r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
         r.bgsave()
         await event.reply(r"Level changed. \o/")
         raise events.StopPropagation
 
-    elif re.match(r"^(/view_pings)$|^(/view_pings{})$".format(vars.bot_tag), event.raw_text):
+    elif re.match(r"^(/view_pings)$|^(/view_pings{})$".format(vars.bot_tag) + r"|^(/view_pings_cwe)$|^(/view_pings_cwe{})$".format(vars.bot_tag), event.raw_text):
         if not redis_status():
             await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
             raise events.StopPropagation
 
+        cw_type = ""
+        if event.raw_text.endswith("cwe"):
+            cw_type = "elite"
+        else:
+            cw_type = "int"
+
+        hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
+
         sender_username = await get_sender_username(event)
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             users_data = json.loads(ret)
@@ -323,7 +389,8 @@ def pre_check_reports_fwds(e):
     if e.forward.from_id is None or not hasattr(e.forward.from_id, "user_id"):
         return False
 
-    if e.forward.from_id.user_id == CW_BOT and  e.chat_id in grp_ids_for_hunts and \
+    if ((e.forward.from_id.user_id == CW_BOT and e.chat_id in grp_ids_for_hunts) or \
+        (e.forward.from_id.user_id == CW_ELITE_BOT and e.chat_id in cwe_grp_ids_for_hunts)) and \
             "Your result on the battlefield:" in e.raw_text:
         return True
     else:
@@ -341,11 +408,7 @@ def calc_rem_time(fwd_time):
 async def reports(event):
     sender_username = await get_sender_username(event)
     detected_level = None
-
-    try:
-        detected_level = int(re.findall(r"(?:Lvl\:\s)(\d+)", event.raw_text)[0])
-    except:
-        raise events.StopPropagation
+    cw_type = ""
 
     seconds_passed = calc_rem_time(event.message.forward.date)
 
@@ -353,7 +416,19 @@ async def reports(event):
         await event.reply("Old report, make sure its not older than an hour.")
         raise events.StopPropagation
 
-    ret = r.hget(HASH_KEY, str(event.chat_id))
+    if event.forward.from_id.user_id == CW_BOT:
+        cw_type = "int"
+    else:
+        cw_type = "elite"
+
+    hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
+
+    try:
+        detected_level = int(re.findall(r"(?:Lvl\:\s)(\d+)", event.raw_text)[0])
+    except:
+        raise events.StopPropagation
+
+    ret = r.hget(hash_key, str(event.chat_id))
 
     if ret:
         users_data = json.loads(ret)
@@ -363,11 +438,10 @@ async def reports(event):
         raise events.StopPropagation
 
     users_data[sender_username] = detected_level
-    r.hset(HASH_KEY, str(event.chat_id), json.dumps(users_data))
+    r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
     r.bgsave()
     await event.respond(f"Updated new level of `{sender_username}` "
                         f"to {detected_level} successfully.")
-
     raise events.StopPropagation
 
 def calc_passed_time(time_elapsed, timeout):
@@ -429,7 +503,8 @@ def pre_check_fight_fwds(e):
     if e.forward.from_id is None or not hasattr(e.forward.from_id, "user_id"):
         return False
 
-    if e.forward.from_id.user_id == CW_BOT and e.chat_id in grp_ids_for_hunts and \
+    if ((e.forward.from_id.user_id == CW_BOT and e.chat_id in grp_ids_for_hunts) or \
+        (e.forward.from_id.user_id == CW_ELITE_BOT and e.chat_id in cwe_grp_ids_for_hunts)) and \
         (ambush_text in e.raw_text or monster_text in e.raw_text):
         return True
     else:
@@ -446,6 +521,14 @@ async def fight(event):
     min_mob_level = min(mob_level)
     seconds_passed = calc_rem_time(event.message.forward.date)
     new_line = "\n"
+    cw_type = ""
+
+    if event.forward.from_id.user_id == CW_BOT:
+        cw_type = "int"
+    else:
+        cw_type = "elite"
+
+    hash_key = HASH_KEY if cw_type == "int" else CWE_HASH_KEY
 
     if ambush_text in event_text:
         champ_text, ping_list = "", []
@@ -463,7 +546,7 @@ async def fight(event):
                             "** remaining!!"
 
         # Check if the guild has ambush enabled
-        ret = r.hget(HASH_KEY, HASH_FIELD)
+        ret = r.hget(hash_key, HASH_FIELD)
 
         if ret:
             fight_type = json.loads(ret)
@@ -476,7 +559,7 @@ async def fight(event):
             min_level = 0
             champ_text = "**⚜️😳ITS AN CHAAAAAAMPPP!!!!!😱⚜️**"
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             ping_list = json.loads(ret)
@@ -503,7 +586,7 @@ async def fight(event):
 
         mob = await event.respond(text, buttons=markup)
 
-        print("Caught ambush fight in:", event.chat_id)
+        print(f"[{cw_type}] Caught ambush fight in:", event.chat_id)
         await vars.bot.pin_message(entity=event.chat_id, message=mob.id)
         await asyncio.sleep(AMBUSH_TIMEOUT - seconds_passed)
         await vars.bot.unpin_message(entity=event.chat_id, message=mob.id)
@@ -517,14 +600,14 @@ async def fight(event):
             raise events.StopPropagation
 
         # Check if the guild has monster enabled
-        ret = r.hget(HASH_KEY, HASH_FIELD)
+        ret = r.hget(hash_key, HASH_FIELD)
 
         if ret:
             fight_type = json.loads(ret)
             if not fight_type[str(event.chat_id)][1]:
                 raise events.StopPropagation
 
-        ret = r.hget(HASH_KEY, str(event.chat_id))
+        ret = r.hget(hash_key, str(event.chat_id))
 
         if ret:
             ping_list = json.loads(ret)
@@ -548,5 +631,5 @@ async def fight(event):
             await event.respond(" ".join(ping_list[i:i + MAX_PIN_PER_MSG]))
             await asyncio.sleep(0.5)
 
-        print("Caught monster fight in:", event.chat_id)
+        print("[{cw_type}] Caught monster fight in:", event.chat_id)
         raise events.StopPropagation

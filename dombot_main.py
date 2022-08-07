@@ -10,7 +10,7 @@ def main():
     from dombot.image_processing import image_process
 
     # dom.add_event_handler(blek_magic.print_id)
-    
+
     # dombot
     bot.add_event_handler(start.start)
     bot.add_event_handler(admin.admin_only)
