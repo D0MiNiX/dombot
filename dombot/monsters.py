@@ -591,9 +591,14 @@ async def fight(event):
         mob = await event.respond(text, buttons=markup)
 
         print(f"[{cw_type}] Caught ambush fight in:", event.chat_id)
-        await vars.bot.pin_message(entity=event.chat_id, message=mob.id)
-        await asyncio.sleep(AMBUSH_TIMEOUT - seconds_passed)
-        await vars.bot.unpin_message(entity=event.chat_id, message=mob.id)
+
+        try:
+            await vars.bot.pin_message(entity=event.chat_id, message=mob.id)
+            await asyncio.sleep(AMBUSH_TIMEOUT - seconds_passed)
+            await vars.bot.unpin_message(entity=event.chat_id, message=mob.id)
+        except:
+            raise events.StopPropagation
+
         raise events.StopPropagation
 
     elif monster_text in event_text:
