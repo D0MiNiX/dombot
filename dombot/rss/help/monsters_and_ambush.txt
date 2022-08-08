@@ -8,4 +8,4 @@
 
 For CWE, add "_cwe" at the end of each command: e.g., `/reg_hunt_cwe, /level_cwe, /add_hunter_cwe,` etc.
 
-Bot will pin the message for ambush fights and unpin when fight is over, if admin privileges are provided. Happy hunting 👾.
+Bot will pin the message for ambush fights and unpin when fight is over, if pin rights are provided. Happy hunting 👾.
