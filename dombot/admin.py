@@ -23,28 +23,30 @@ async def admin_only(event):
         raise events.StopPropagation
 
     elif Command(incomingText, '/whois'):
-        expression = incomingText.replace('/whois', '')
-        expression = "".join(expression.split())
+        expression = event.raw_text.split()
+
+        if len(expression) > 1:
+            expression = expression[1]
+        else:
+            await event.respond("Give ID or username!")
+            raise events.StopPropagation
+
+        if expression.isdigit():
+            expression = int(expression)
+
         cgTitle = 0
         msg = ''
 
         try:
-            int(expression)
-            user = await bot_vars.bot.get_entity(int(expression))
+            user = await bot_vars.bot.get_entity(expression)
             try:
-                full = await bot_vars.bot(GetFullUserRequest(int(expression)))
-            except:
-                full = await bot_vars.bot(GetFullChannelRequest(int(expression)))
-                cgTitle = 1
-        except:
-            uid = await bot_vars.bot.get_input_entity(expression)
-            try:
-                user = await bot_vars.bot.get_entity(uid.user_id)
                 full = await bot_vars.bot(GetFullUserRequest(expression))
             except:
-                user = await bot_vars.bot.get_entity(uid.channel_id)
                 full = await bot_vars.bot(GetFullChannelRequest(expression))
                 cgTitle = 1
+        except:
+            await event.respond("Unable to fetch details!")
+            raise events.StopPropagation
 
         if not cgTitle:
             msg = '`Username   : `' + '@' + str(user.username) + '\n' + \
