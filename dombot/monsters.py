@@ -83,13 +83,14 @@ async def get_sender_username(event):
     pattern=r"^(/reg_hunt)$|^(/reg_hunt{})$|^(/reg_hunt_cwe)$|^(/reg_hunt_cwe{})$".format(vars.bot_tag, vars.bot_tag),
     func=lambda e: not e.is_private))
 async def register(event):
-    global r, HASH_KEY, CWE_HASH_KEY
+    global r, HASH_KEY, CWE_HASH_KEY, HASH_FIELD
 
     if not redis_status():
         await event.respond("DB server is not up! Please feel free to annoy @D0MiNiX.")
         raise events.StopPropagation
 
     cw_type = ""
+    data = {}
 
     if event.raw_text.endswith("cwe"):
         cw_type = "elite"
@@ -107,20 +108,15 @@ async def register(event):
         grp_id = data.keys()
 
     if group_id not in grp_id:
-        data = {
-            group_id: [1, 1]
-        }
+        data[group_id] = [1, 1]
         r.hset(hash_key, HASH_FIELD, json.dumps(data))
     else:
         await event.reply("Group is already registered for the hunts!")
         raise events.StopPropagation
 
     sender_username = await get_sender_username(event)
-
-    data = {
-        sender_username: DFLT_LVL
-    }
-
+    data.clear()
+    data[sender_username] = DFLT_LVL
     r.hset(hash_key, group_id, json.dumps(data))
     r.bgsave()
 
