@@ -1,5 +1,4 @@
-import re
-import sys
+import telethon.tl.types as tl_types
 from datetime import datetime
 from functions import Command, RestartBot, CurrentTime, fun, delay
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -39,9 +38,9 @@ async def admin_only(event):
 
         try:
             user = await bot_vars.bot.get_entity(expression)
-            try:
+            if isinstance(user, tl_types.User):
                 full = await bot_vars.bot(GetFullUserRequest(expression))
-            except:
+            else:
                 full = await bot_vars.bot(GetFullChannelRequest(expression))
                 cgTitle = 1
         except:
