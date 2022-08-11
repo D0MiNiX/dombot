@@ -249,6 +249,7 @@ async def commands(event):
 
         sender_username = await get_sender_username(event)
         data = re.split(r"\s+", event.raw_text)
+        users_list = []
 
         if len(data) != 2:
             await event.reply("Invalid. Usage: `/rm <user_name>`.")
@@ -296,6 +297,7 @@ async def commands(event):
         sender_username = await get_sender_username(event)
         data = re.split(r"\s+", event.raw_text)
         user_name, level = "", ""
+        users_list = []
 
         cw_type = ""
         if data[0].endswith("cwe"):
@@ -355,6 +357,7 @@ async def commands(event):
             raise events.StopPropagation
 
         cw_type = ""
+        users_list = []
         if event.raw_text.endswith("cwe"):
             cw_type = "elite"
         else:
@@ -405,6 +408,7 @@ async def reports(event):
     sender_username = await get_sender_username(event)
     detected_level, player_level = None, None
     cw_type = ""
+    users_list = []
 
     seconds_passed = calc_rem_time(event.message.forward.date)
 
@@ -538,6 +542,7 @@ async def fight(event):
         if seconds_passed > AMBUSH_TIMEOUT:
             await event.reply("OMG! What were you doing? Baking 🍪? You are late by " +
                                 calc_passed_time(seconds_passed, AMBUSH_TIMEOUT) + " 😳.")
+            raise events.StopPropagation
 
         minutes = int((AMBUSH_TIMEOUT - seconds_passed) / 60)
         seconds = (AMBUSH_TIMEOUT - seconds_passed) % 60
