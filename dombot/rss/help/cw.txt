@@ -1,1 +1,2 @@
 • /cw_mobs_help - Regarding setting up the pings for the monster and ambush fights 
+• On forwarding the `/g_idlist` bot will ping those who are resting if everyone has a user name.

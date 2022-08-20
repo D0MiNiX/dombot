@@ -4,9 +4,7 @@ import arrow
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import os
 
-
 DOMBOT_BACKUP_CHANNEL = -1001463171286
-
 
 async def create_and_send_backup():
     dir_name = os.path.basename(os.getcwd())

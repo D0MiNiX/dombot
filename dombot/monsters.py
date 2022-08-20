@@ -5,7 +5,6 @@ from telethon import events, Button
 import re
 import vars
 import asyncio
-from database import Database
 
 HASH_KEY = "cw_monster_ambush"
 CWE_HASH_KEY = "cwe_monster_ambush"
@@ -591,8 +590,6 @@ async def fight(event):
 
         mob = await event.respond(text, buttons=markup)
 
-        print(f"[{cw_type}] Caught ambush fight in:", event.chat_id)
-
         try:
             await vars.bot.pin_message(entity=event.chat_id, message=mob.id)
             await asyncio.sleep(AMBUSH_TIMEOUT - seconds_passed)
@@ -641,5 +638,4 @@ async def fight(event):
             await event.respond(" ".join(ping_list[i:i + MAX_PIN_PER_MSG]))
             await asyncio.sleep(0.5)
 
-        print(f"[{cw_type}] Caught monster fight in:", event.chat_id)
         raise events.StopPropagation
