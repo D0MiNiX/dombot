@@ -31,6 +31,7 @@ r = redis.Redis(decode_responses=True)
 
 def redis_status():
     global r
+
     try:
         r.ping()
         return True
@@ -62,13 +63,18 @@ def load_group_ids():
 
 # Start the redis-server if not started
 if not redis_status():
-    print(f"Couldn't connect to redis server! Trying to run the server using `redis-server` command.")
-    output = subprocess.Popen(["redis-server"], stdout=subprocess.DEVNULL)
-    print(output)
-    if redis_run(output):
-        load_group_ids()
-else:
-    load_group_ids()
+    print("Redis server not started. Exiting.")
+    exit(-1)
+
+load_group_ids()
+
+#     print(f"Couldn't connect to redis server! Trying to run the server using `redis-server` command.")
+#     output = subprocess.Popen(["redis-server"], stdout=subprocess.DEVNULL)
+#     print(output)
+#     if redis_run(output):
+#         load_group_ids()
+# else:
+#     load_group_ids()
 
 async def get_sender_username(event):
     if event.sender.username is not None:
@@ -117,7 +123,7 @@ async def register(event):
     data.clear()
     data[sender_username] = DFLT_LVL
     r.hset(hash_key, group_id, json.dumps(data))
-    r.bgsave()
+    # r.bgsave()
 
     if cw_type == "int":
         grp_ids_for_hunts.append(event.chat_id)
@@ -145,6 +151,7 @@ async def commands(event):
         users_data = {}
 
         cw_type = ""
+
         if data[0].endswith("cwe"):
             cw_type = "elite"
         else:
@@ -170,7 +177,7 @@ async def commands(event):
             toggle_hunt[str(event.chat_id)] = [1 if change_type == "monster" else stored_val[0],
                                                1 if change_type == "ambush" else stored_val[1]]
             r.hset(hash_key, HASH_FIELD, json.dumps(toggle_hunt))
-            r.bgsave()
+            # r.bgsave()
         elif option == "off":
             ret = r.hget(hash_key, HASH_FIELD)
             toggle_hunt = json.loads(ret)
@@ -178,7 +185,7 @@ async def commands(event):
             toggle_hunt[str(event.chat_id)] = [0 if change_type == "monster" else stored_val[0],
                                                0 if change_type == "ambush" else stored_val[1]]
             r.hset(hash_key, HASH_FIELD, json.dumps(toggle_hunt))
-            r.bgsave()
+            # r.bgsave()
         else:
             await event.reply(f"Incorrect options provided. Usage: `/{change_type} <option>`, where option = \"on\" or \"off\".")
             raise events.StopPropagation
@@ -199,6 +206,7 @@ async def commands(event):
             await event.reply("Invalid. Usage `/add_hunter <user_name> <level>`.")
 
         cw_type = ""
+
         if data[0].endswith("cwe"):
             cw_type = "elite"
         else:
@@ -236,7 +244,7 @@ async def commands(event):
 
         users_data[user_name] = level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        r.bgsave()
+        # r.bgsave()
         await event.reply(r"Added. \o/")
         raise events.StopPropagation
 
@@ -255,6 +263,7 @@ async def commands(event):
             raise events.StopPropagation
 
         cw_type = ""
+
         if data[0].endswith("cwe"):
             cw_type = "elite"
         else:
@@ -283,7 +292,7 @@ async def commands(event):
 
         del users_data[user_name]
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        r.bgsave()
+        # r.bgsave()
         await event.reply(r"Removed. \o/")
         raise events.StopPropagation
 
@@ -299,6 +308,7 @@ async def commands(event):
         users_list = []
 
         cw_type = ""
+
         if data[0].endswith("cwe"):
             cw_type = "elite"
         else:
@@ -346,7 +356,7 @@ async def commands(event):
 
         users_data[user_name] = level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        r.bgsave()
+        # r.bgsave()
         await event.reply(r"Level changed. \o/")
         raise events.StopPropagation
 
@@ -357,6 +367,7 @@ async def commands(event):
 
         cw_type = ""
         users_list = []
+
         if event.raw_text.endswith("cwe"):
             cw_type = "elite"
         else:
@@ -441,7 +452,7 @@ async def reports(event):
     if player_level != detected_level:
         users_data[sender_username] = detected_level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        r.bgsave()
+        # r.bgsave()
         await event.respond(f"Updated new level of `{sender_username}` "
                             f"to {detected_level} successfully.")
 

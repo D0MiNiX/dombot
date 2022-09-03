@@ -3,8 +3,10 @@ import shutil
 import arrow
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import os
+from dombot.monsters import r
 
 DOMBOT_BACKUP_CHANNEL = -1001463171286
+job_scheduler = AsyncIOScheduler()
 
 async def create_and_send_backup():
     dir_name = os.path.basename(os.getcwd())
@@ -23,9 +25,12 @@ async def create_and_send_backup():
         except Exception as e:
             print("Failed remove: ", e)
 
+async def rdb_backup():
+    r.bgsave()
 
 def create_backup_job():
-    scheduler = AsyncIOScheduler()
-    scheduler.configure(timezone="Asia/Kolkata")
-    scheduler.start()
-    scheduler.add_job(create_and_send_backup, 'cron', hour='20', minute='00')
+    global job_scheduler
+    job_scheduler.configure(timezone="Asia/Kolkata")
+    job_scheduler.start()
+    job_scheduler.add_job(create_and_send_backup, 'cron', hour='20', minute='00')
+    job_scheduler.add_job(rdb_backup, 'cron', hour="*", minute="*/30", misfire_grace_time=None)

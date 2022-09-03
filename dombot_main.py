@@ -8,6 +8,7 @@ def main():
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
     from dombot.image_processing import image_process
+    from dombot.monsters import r
 
     # dom.add_event_handler(blek_magic.print_id)
 
@@ -56,14 +57,14 @@ def main():
     # dom.add_event_handler(blek_magic.bot_testing)
     dom.add_event_handler(report_leaders.cw_report_channel)
 
-    # create backup job
+    # create backup jobs
     create_backup_job()
 
     bot.send_message(D0MiNiX, "`commenced`")
     print("commenced")
 
     dom.run_until_disconnected()
-
+    print("\nRDB saved." if r.save() else "Error saving RDB!")
 
 if __name__ == '__main__':
     main()
