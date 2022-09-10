@@ -387,7 +387,8 @@ async def commands(event):
             raise events.StopPropagation
 
         new_line = '\n'
-        ping_list = new_line.join(list(map(lambda x: f"`{x[0]}, {x[1]}`", users_data.items())))
+        s = sorted(users_data.items(), key=lambda x: x[1], reverse=True)
+        ping_list = new_line.join(list(map(lambda x: f"`{x[0]}, {x[1]}`", s)))
         await event.respond(ping_list)
         raise events.StopPropagation
 

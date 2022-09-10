@@ -6,7 +6,7 @@ from datetime import datetime
 
 MAX_PIN_PER_MSG = 4
 MAX_FWD_TIME = 360
-msg_pattern = re.compile(r"#\d+ \S+\d+ \[\S+\] \w+\d+$")
+msg_pattern = re.compile(r"#\d+ \S+\d+ \[\S+\] \w+\d+$", flags=re.M)
 CW_BOT = 408101137
 CW_ELITE_BOT = 5233916499
 
@@ -37,7 +37,7 @@ def check_forward(e):
 
 @events.register(events.NewMessage(func=lambda e: check_forward(e)))
 async def id_list(event):
-    
+
     seconds_passed = calc_rem_time(event.message.forward.date)
 
     if seconds_passed > MAX_FWD_TIME:
