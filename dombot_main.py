@@ -3,7 +3,8 @@ from vars import bot, dom, D0MiNiX
 
 def main():
     from dombot.typo_tales.dragon_egg import dragon_egg
-    from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, reminders, region, idle_list_ping
+    from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, \
+                        reminders, region, idle_list_ping, vpb_thres
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
@@ -51,6 +52,9 @@ def main():
 
     # idle list pings
     bot.add_event_handler(idle_list_ping.id_list)
+
+    # vpb threshold
+    bot.add_event_handler(vpb_thres.calc_vpbs)
 
     # dom user bot
     dom.add_event_handler(blek_magic.cw)
