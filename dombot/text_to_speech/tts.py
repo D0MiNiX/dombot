@@ -23,14 +23,12 @@ async def task_done(text, lang_code, file_name, event_data):
 
 
 def convert_thread(text, lang_code, file_name, event_data, loop):
-    # lock.acquire()
     try:
         tts_obj = gTTS(text=text, lang=lang_code, slow=False)
         tts_obj.save(file_name)
         loop.call_soon_threadsafe(loop.create_task, task_done(text, lang_code, file_name, event_data))
     except Exception as e:
         loop.call_soon_threadsafe(loop.create_task, send_exception(str(e), event_data))
-    # lock.release()
 
 
 @events.register(events.NewMessage())

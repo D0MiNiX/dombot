@@ -28,9 +28,15 @@ async def create_and_send_backup():
 async def rdb_backup():
     r.bgsave()
 
-def create_backup_job():
+def get_job_sched():
     global job_scheduler
+    return job_scheduler
+
+def create_backup_job():
+    from user_bot.vpb_reminder import remind_vpb
+    global job_scheduler, vpb_job_id
     job_scheduler.configure(timezone="Asia/Kolkata")
     job_scheduler.start()
     job_scheduler.add_job(create_and_send_backup, 'cron', hour='20', minute='00')
     job_scheduler.add_job(rdb_backup, 'cron', hour="*", minute="*/30", misfire_grace_time=None)
+    job_scheduler.add_job(remind_vpb, 'cron', hour=21, minute=0, misfire_grace_time=None)
