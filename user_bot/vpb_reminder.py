@@ -37,9 +37,9 @@ async def remind_vpb():
         async with dom.conversation(DOMBOT) as conv:
             msg_reminder = await conv.send_message("VPB reminder time!")
             msg_fwd = await dom.forward_messages(DOMBOT, resp_cw.id, from_peer=CW_BOT)
+            await dom.delete_messages(CW_BOT, [msg_cw.id, resp_cw.id])
             resp = await conv.get_response()
             await dom.delete_messages(DOMBOT, [msg_reminder.id, msg_fwd.id, resp.id])
-            await dom.delete_messages(CW_BOT, [msg_cw.id, resp_cw.id])
             resp = "@Mitli16 @hasserodian @D0MiNiX\n**Following VPBs missing:**\n" + resp.text.replace('**Missing VPBs:**\n', '')
     except asyncio.exceptions.TimeoutError:
         return

@@ -527,7 +527,7 @@ def pre_check_fight_fwds(e):
 
 @events.register(events.NewMessage(incoming=True, forwards=True, func=lambda e: pre_check_fight_fwds(e)))
 async def fight(event):
-
+    global AMBUSH_TIMEOUT, MONSTERS_TIMEOUT
     event_text = event.raw_text
     sender_username = await get_sender_username(event)
     mob_level = re.findall(r"lvl\.(\d+)", event_text)
@@ -579,7 +579,7 @@ async def fight(event):
 
         if ret:
             ping_list = json.loads(ret)
-            ping_list = [k for k, v in ping_list.items() if min_level < v < max_level]
+            ping_list = [k for k, v in ping_list.items() if min_level < v < max_level and sender_username != k]
             if not ping_list: 
                 await event.reply("Sorry mate! No players found in that level range. Fingers crossed 🤞.")
                 raise events.StopPropagation
