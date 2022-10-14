@@ -6,8 +6,10 @@ import random
 import aiocron
 import re, platform
 from datetime import datetime
+from dombot.monsters import r
 
 IS_LINUX = True
+CURRENT_LEVEL = int(r.get("current_level"))
 
 if platform.system() == "Windows":
     IS_LINUX = False
@@ -228,7 +230,7 @@ async def cw(event):
     global cw_elite, cw2
     global qst_txts, foray_results, quest_over, monster_fight, arena_text
     global stam_full_text, foray_intervene, quest_start_txt, accept_tribute_txt
-    global me_regex, CARAVAN_TEXT
+    global me_regex, CARAVAN_TEXT, CURRENT_LEVEL
 
     cw = cw2 if event.chat_id == CW_BOT else cw_elite
 
@@ -397,3 +399,20 @@ async def bot_testing(event):
         await dom.delete_messages(event.chat_id, message_ids=[msg.id])
         raise events.StopPropagation
 
+
+@events.register(events.NewMessage(chats=[D0MiNiX]))
+async def set_current_level(event):
+    global me_regex, CURRENT_LEVEL
+
+    # Set the current level
+    if me_regex.search(event.raw_text):
+        lvl = int(re.findall(r"Level: (\d+)", event.raw_text)[0])
+        
+        if CURRENT_LEVEL != lvl:
+            r.set("current_level", lvl)
+            CURRENT_LEVEL = lvl
+            await event.respond(f"Current level updated to {lvl} successfully!")
+        else:
+            await event.respond(f"Same level as current one.")
+        
+        raise events.StopPropagation

@@ -56,9 +56,12 @@ def main():
     # vpb threshold
     bot.add_event_handler(vpb_thres.calc_vpbs)
 
+    # Update your CW level
+    # bot.add_event_handler(blek_magic.set_current_level)
+
     # dom user bot
-    dom.add_event_handler(blek_magic.cw)
-    dom.add_event_handler(blek_magic.bot_testing)
+    # dom.add_event_handler(blek_magic.cw)
+    # dom.add_event_handler(blek_magic.bot_testing)
     dom.add_event_handler(report_leaders.cw_report_channel)
 
     # create backup jobs

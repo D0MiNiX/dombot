@@ -2,13 +2,15 @@ import vars
 import shutil
 import arrow
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import os
+import os, subprocess
 from dombot.monsters import r
 
 DOMBOT_BACKUP_CHANNEL = -1001463171286
 job_scheduler = AsyncIOScheduler()
 
 async def create_and_send_backup():
+    # Copy the database so it can be contained in backup
+    subprocess.run("echo 'zxc' | sudo -S cp /var/lib/redis/dump.rdb .".split())
     dir_name = os.path.basename(os.getcwd())
     current_time = arrow.now().format("DD_MM_YYYY-HH_mm_ss")
     bot_dir = os.getcwd()
