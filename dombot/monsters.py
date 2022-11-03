@@ -579,7 +579,7 @@ async def fight(event):
 
         if ret:
             ping_list = json.loads(ret)
-            ping_list = [k for k, v in ping_list.items() if min_level < v < max_level and sender_username != k]
+            ping_list = [k for k, v in ping_list.items() if min_level < v <= max_level and sender_username != k]
             if not ping_list: 
                 await event.reply("Sorry mate! No players found in that level range. Fingers crossed 🤞.")
                 raise events.StopPropagation
