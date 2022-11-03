@@ -343,15 +343,14 @@ async def triggers(event):
 			trigger_name = data[0]
 			added_by = data[1]
 			added_on = data[2]
-			response += f"`{count}. " + f"{trigger_name} " + \
-			    f"(@{added_by} - {added_on})`" + "\n"
-			if count % 50 == 0:
-				response_list.append(response)
-				response = ""
+			response = f"`{count}. " + f"{trigger_name} " + f"(@{added_by} - {added_on})`"
+			response_list.append(response)
 
 		if response_list:
-			for resp in response_list:
-				await event.respond(resp)
+			new_line = '\n'
+			_lst = [response_list[i:i + 50] for i in range(0, len(response_list), 50)]
+			for resp in _lst:
+				await event.respond(new_line.join(resp))
 		else:
 			await event.respond(response)
 
@@ -373,16 +372,16 @@ async def triggers(event):
 		response_list = []
 		for count, data in enumerate(triggers_data, start=1):
 			trigger_name = data[0]
-			response += f"`{count}.` " + f"`{trigger_name}` " + "\n"
-			if count % 50 == 0:
-				response_list.append(response)
-				response = ""
+			response = f"`{count}.` " + f"`{trigger_name}`"
+			response_list.append(response)
 
 		if response_list:
-			for resp in response_list:
-				await event.respond(resp)
+			new_line = '\n'
+			_lst = [response_list[i:i + 50] for i in range(0, len(response_list), 50)]
+			for resp in _lst:
+				await event.respond(new_line.join(resp))
 		else:
-			await event.respond(response)
+			await event.respond("No triggers found in this chat. Start creating using `/set_trigger` command.")
 
 		raise events.StopPropagation
 
