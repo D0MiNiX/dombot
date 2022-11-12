@@ -164,9 +164,9 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = users_data.keys()
+            users_list = [k.lower() for k in users_data.keys()]
 
-        if sender_username not in users_list:
+        if sender_username.lower() not in users_list:
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
@@ -232,13 +232,13 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = users_data.keys()
+            users_list = [k.lower() for k in users_data.keys()]
 
-        if sender_username not in users_list:
+        if sender_username.lower() not in users_list:
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
-        if user_name in users_list:
+        if user_name.lower() in users_list:
             await event.reply("User already exist in the ping list!")
             raise events.StopPropagation
 
@@ -280,13 +280,13 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = users_data.keys()
+            users_list = [k.lower() for k in users_data.keys()]
 
-        if sender_username not in users_list:
+        if sender_username.lower() not in users_list:
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
-        if user_name not in users_list:
+        if user_name.lower() not in users_list:
             await event.reply("User doesn't exist in the ping list!")
             raise events.StopPropagation
 
@@ -344,13 +344,13 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = users_data.keys()
+            users_list = [k.lower() for k in users_data.keys()]
 
-        if sender_username not in users_list:
+        if sender_username.lower() not in users_list:
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
-        if user_name not in users_list:
+        if user_name.lower() not in users_list:
             await event.reply("User doesn't exist in the ping list!")
             raise events.StopPropagation
 
@@ -380,9 +380,9 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = users_data.keys()
+            users_list = [k.lower() for k in users_data.keys()]
 
-        if sender_username not in users_list:
+        if sender_username.lower() not in users_list:
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
