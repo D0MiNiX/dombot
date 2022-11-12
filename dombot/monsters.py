@@ -443,9 +443,9 @@ async def reports(event):
 
     if ret:
         users_data = json.loads(ret)
-        users_list = users_data.keys()
+        users_list = [k.lower() for k in users_data.keys()]
 
-    if sender_username not in users_list:
+    if sender_username.lower() not in users_list:
         raise events.StopPropagation
 
     player_level = int(users_data[sender_username])
@@ -453,7 +453,6 @@ async def reports(event):
     if player_level != detected_level:
         users_data[sender_username] = detected_level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        # r.bgsave()
         await event.respond(f"Updated new level of `{sender_username}` "
                             f"to {detected_level} successfully.")
 
@@ -579,7 +578,9 @@ async def fight(event):
 
         if ret:
             ping_list = json.loads(ret)
-            ping_list = [k for k, v in ping_list.items() if min_level < v <= max_level and sender_username != k]
+            ping_list = [k for k, v in ping_list.items() 
+                            if min_level < v <= max_level and 
+                            sender_username.lower() != k.lower()]
             if not ping_list: 
                 await event.reply("Sorry mate! No players found in that level range. Fingers crossed 🤞.")
                 raise events.StopPropagation
@@ -635,7 +636,7 @@ async def fight(event):
 
         # Get only the usernames in that level range
         low, high = calc_limit(event)
-        ping_list = [k for k, v in ping_list.items() if low <= v <= high and sender_username != k]
+        ping_list = [k for k, v in ping_list.items() if low <= v <= high and sender_username.lower() != k.lower()]
 
         if not ping_list: 
             await event.reply("Sorry mate! No players found in that level range. Fingers crossed 🤞.")
