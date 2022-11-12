@@ -549,7 +549,7 @@ async def fight(event):
         min_level = (min_mob_level - 11) if min_mob_level >= 11 else 0
         max_level = (min_mob_level + 11)
 
-        if seconds_passed > AMBUSH_TIMEOUT:
+        if seconds_passed > AMBUSH_TIMEOUT and event.chat_id != vars.BOT_TESTING:
             await event.reply("OMG! What were you doing? Baking 🍪? You are late by " +
                                 calc_passed_time(seconds_passed, AMBUSH_TIMEOUT) + " 😳.")
             raise events.StopPropagation
@@ -614,7 +614,7 @@ async def fight(event):
 
     elif monster_text in event_text:
         ping_list = []
-        if seconds_passed > MONSTERS_TIMEOUT:
+        if seconds_passed > MONSTERS_TIMEOUT and event.chat_id != vars.BOT_TESTING:
             await event.reply("OMG! What were you doing? Baking 🍪? You are late by " +
                                calc_passed_time(seconds_passed, MONSTERS_TIMEOUT) + " 😳.")
             raise events.StopPropagation
