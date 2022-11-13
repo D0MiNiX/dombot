@@ -1,11 +1,9 @@
 from telethon import events, functions
-from vars import D0MiNiX, dom, bot
+from vars import D0MiNiX, dom
 from functions import list_string_in_text, Command, command_with_args
 import asyncio
 import random
-import aiocron
 import re, platform
-from datetime import datetime
 from dombot.monsters import r
 
 IS_LINUX = True
@@ -83,7 +81,8 @@ qst_txts = [
     'At a remote place in the mountains you spot some funny looking',
     'You noticed a book lying under the tree',
     'In and out, 20 second adventure!',
-    'Being a naturally bad pathfinder, you got lost'
+    'Being a naturally bad pathfinder, you got lost',
+    'You went too far and saw the forbidden castle'
 ]
 
 arena_text = [
@@ -103,6 +102,7 @@ class ChatWars:
         self.foray_someone = False
         self.arena_started = False
         self.stam = 0
+        self.me_sent = False
 
     async def go_offline(self):
         await asyncio.sleep(2)
@@ -185,7 +185,7 @@ class ChatWars:
     async def go_foray_someone(self, event):
         self.stam -= 2
         if self.stam <= 1:
-            self.foray_someone = False
+            self.clear_state()
             await asyncio.sleep(random.randrange(10, 15))
             await event.respond("🛡Defend")
         else:
@@ -213,6 +213,7 @@ class ChatWars:
         self.quest_started = False
         self.foray_someone = False
         self.arena_started = False
+        self.me_sent = False
 
 
 cw2 = ChatWars(CW_BOT)
@@ -243,6 +244,9 @@ async def cw(event):
         raise events.StopPropagation
 
     elif me_regex.search(event.raw_text) and (cw.quest_started or cw.foray_someone):
+        if cw.me_sent:
+            raise events.StopPropagation
+        cw.me_sent = True
         await cw.start_quest(event)
         raise events.StopPropagation
 
@@ -288,6 +292,13 @@ async def bot_testing(event):
     cw = cw_elite if event.raw_text.endswith("_e") else cw2
 
     if event.raw_text.startswith("qst"):
+        if cw.quest_started:
+            await event.delete()
+            msg = await event.respond("Quest already in progress!")
+            await event.delete(msg.id)
+            asyncio.sleep(1)
+            raise events.StopPropagation
+
         quest_type = event.raw_text.split(" ")
 
         if len(quest_type) == 1:
