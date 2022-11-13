@@ -250,7 +250,7 @@ async def cw(event):
         await cw.start_quest(event)
         raise events.StopPropagation
 
-    elif list_string_in_text(event.raw_text, qst_txts) and not cw.arena_started:
+    elif list_string_in_text(event.raw_text, qst_txts) and not cw.arena_started and cw.quest_started:
         await cw.send_quest(event)
         raise events.StopPropagation
 
