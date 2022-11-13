@@ -133,6 +133,10 @@ async def register(event):
     await event.reply("Group registered for hunts successfully. Please set your level using `/level <your level>`. I have set it to 25.\nPings for both ambush and monster hunts are turned on. If you prefer to disable them, use `/monster off` or `/ambush off`.")
     raise events.StopPropagation
 
+# Store the mapping for original and lower case usernames
+def create_mapping(data):
+    return {k.lower():k for k in data.keys()}
+
 @events.register(events.NewMessage(pattern=r"^\/\S+.*", func=lambda e: e.chat_id in grp_ids_for_hunts or e.chat_id in cwe_grp_ids_for_hunts))
 async def commands(event):
     global r
@@ -185,7 +189,6 @@ async def commands(event):
             toggle_hunt[str(event.chat_id)] = [0 if change_type == "monster" else stored_val[0],
                                                0 if change_type == "ambush" else stored_val[1]]
             r.hset(hash_key, HASH_FIELD, json.dumps(toggle_hunt))
-            # r.bgsave()
         else:
             await event.reply(f"Incorrect options provided. Usage: `/{change_type} <option>`, where option = \"on\" or \"off\".")
             raise events.StopPropagation
@@ -244,7 +247,6 @@ async def commands(event):
 
         users_data[user_name] = level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        # r.bgsave()
         await event.reply(r"Added. \o/")
         raise events.StopPropagation
 
@@ -256,7 +258,7 @@ async def commands(event):
 
         sender_username = await get_sender_username(event)
         data = re.split(r"\s+", event.raw_text)
-        users_list = []
+        user_list_map = {}
 
         if len(data) != 2:
             await event.reply("Invalid. Usage: `/rm <user_name>`.")
@@ -280,19 +282,18 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = [k.lower() for k in users_data.keys()]
+            user_list_map = create_mapping(users_data)
 
-        if sender_username.lower() not in users_list:
+        if sender_username.lower() not in user_list_map.keys():
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
-        if user_name.lower() not in users_list:
+        if user_name.lower() not in user_list_map.keys():
             await event.reply("User doesn't exist in the ping list!")
             raise events.StopPropagation
 
-        del users_data[user_name]
+        del users_data[user_list_map[user_name.lower()]]
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        # r.bgsave()
         await event.reply(r"Removed. \o/")
         raise events.StopPropagation
 
@@ -305,7 +306,7 @@ async def commands(event):
         sender_username = await get_sender_username(event)
         data = re.split(r"\s+", event.raw_text)
         user_name, level = "", ""
-        users_list = []
+        user_list_map = {}
 
         cw_type = ""
 
@@ -344,19 +345,18 @@ async def commands(event):
 
         if ret:
             users_data = json.loads(ret)
-            users_list = [k.lower() for k in users_data.keys()]
+            user_list_map = create_mapping(users_data)
 
-        if sender_username.lower() not in users_list:
+        if sender_username.lower() not in user_list_map.keys():
             await event.reply("You're not in the ping list!")
             raise events.StopPropagation
 
-        if user_name.lower() not in users_list:
+        if user_name.lower() not in user_list_map.keys():
             await event.reply("User doesn't exist in the ping list!")
             raise events.StopPropagation
 
-        users_data[user_name] = level
+        users_data[user_list_map[user_name.lower()]] = level
         r.hset(hash_key, str(event.chat_id), json.dumps(users_data))
-        # r.bgsave()
         await event.reply(r"Level changed. \o/")
         raise events.StopPropagation
 
