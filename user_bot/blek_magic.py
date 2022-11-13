@@ -295,7 +295,7 @@ async def bot_testing(event):
         if cw.quest_started:
             await event.delete()
             msg = await event.respond("Quest already in progress!")
-            await event.delete(msg.id)
+            await dom.delete(event.chat_id, msg.id)
             asyncio.sleep(1)
             raise events.StopPropagation
 
