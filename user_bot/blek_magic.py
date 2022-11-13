@@ -131,8 +131,10 @@ class ChatWars:
             await event.respond("🗺Quests")
             await self.go_offline()
         else:
-            self.quest_started = False
-            self.foray_someone = False
+            msg = await dom.send_message(BOT_TESTING, "No stam!")
+            await asyncio.sleep(1)
+            await dom.delete_messages(BOT_TESTING, message_ids=[msg.id])
+            self.clear_state()
 
     async def send_quest(self, event):
         if eval(__class__.__name__).lost_torch_text in event.raw_text:
@@ -295,7 +297,7 @@ async def bot_testing(event):
         if cw.quest_started:
             await event.delete()
             msg = await event.respond("Quest already in progress!")
-            await dom.delete(event.chat_id, msg.id)
+            await dom.delete_messages(event.chat_id, message_ids=[msg.id])
             asyncio.sleep(1)
             raise events.StopPropagation
 
