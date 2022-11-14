@@ -137,11 +137,11 @@ class ChatWars:
             self.clear_state()
 
     async def send_quest(self, event):
-        if eval(__class__.__name__).lost_torch_text in event.raw_text:
+        if ChatWars.lost_torch_text in event.raw_text:
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("/on_tch")
 
-        if eval(__class__.__name__).pathfinder not in event.raw_text:
+        if ChatWars.pathfinder not in event.raw_text:
             self.stam -= 1
 
         if self.stam <= 0 or not self.quest_started:
