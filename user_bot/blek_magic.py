@@ -145,7 +145,7 @@ class ChatWars:
             self.stam -= 1
 
         if self.stam <= 0 or not self.quest_started:
-            self.quest_started = False
+            self.clear_state()
             await asyncio.sleep(random.randrange(1, 5))
             await event.respond("🛡Defend")
         else:
