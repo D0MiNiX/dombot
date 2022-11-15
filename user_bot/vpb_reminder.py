@@ -10,7 +10,7 @@ def sched_new_job():
     new_job_id = job_sched.add_job(remind_vpb, "interval", minutes=15).id
 
 async def remind_vpb():
-    global vpb_job_id, new_job_id
+    global new_job_id
     resp = ""
     msg_cw, resp_cw = "", ""
 

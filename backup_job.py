@@ -34,11 +34,23 @@ def get_job_sched():
     global job_scheduler
     return job_scheduler
 
+async def quest(arg):
+    await vars.dom.send_message(vars.BOT_TESTING, arg)
+
+def sched_cw_jbs(job_sched):
+    # quest
+    job_sched.add_job(quest, args=["qst"], trigger='cron', hour=9, minute=0, misfire_grace_time=None)
+    job_sched.add_job(quest, args=["qst"], trigger='cron', hour=21, minute=30, misfire_grace_time=None)
+
+    # arena
+    job_sched.add_job(quest, args=["arn"], trigger='cron', hour=13, minute=46, misfire_grace_time=None)
+
 def create_backup_job():
     from user_bot.vpb_reminder import remind_vpb
-    global job_scheduler, vpb_job_id
+    global job_scheduler
     job_scheduler.configure(timezone="Asia/Kolkata")
     job_scheduler.start()
     job_scheduler.add_job(create_and_send_backup, 'cron', hour='20', minute='00')
     job_scheduler.add_job(rdb_backup, 'cron', hour="*", minute="*/30", misfire_grace_time=None)
     job_scheduler.add_job(remind_vpb, 'cron', hour=21, minute=0, misfire_grace_time=None)
+    sched_cw_jbs(job_scheduler)
