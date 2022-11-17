@@ -11,8 +11,8 @@ from functions import command, command_with_args
 from functools import partial
 from datetime import datetime, timedelta
 import arrow
-from monsters import r
-from region import HASH_KEY
+from dombot.monsters import r
+from dombot.region import HASH_KEY
 
 HELP_FOLDER = "dombot/rss/help"
 def_jobstore = SQLAlchemyJobStore(url="sqlite:///dombot/rss/databases/sqlite/reminders/jobs.db")

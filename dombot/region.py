@@ -2,7 +2,7 @@ from telethon import events
 from functools import partial
 from functions import command, command_with_args
 from pytz import country_timezones
-from monsters import r
+from dombot.monsters import r
 
 HASH_KEY = "user_region"
 
@@ -34,21 +34,12 @@ async def tz_region(event):
             await event.reply("Incorrect region. You can use `/get_tz <country_code or flag>` to get the regions.")
             raise events.StopPropagation
 
-        ret = r.hset(HASH_KEY, str(event.sender.id), region)
-
-        if ret > 0:
-            await event.reply("Saved region.")
-        else:
-            await event.reply("Could not save region.")
-
+        r.hset(HASH_KEY, str(event.sender.id), region)
+        await event.reply("Saved region.")
         raise events.StopPropagation
 
     elif cmd("rm_region"):
-        ret = r.hdel(HASH_KEY, str(event.sender.id))
-
-        if ret > 0:
-            await event.reply("Deleted region.")
-        else:
-            await event.reply("Could not delete region.")
-
+        r.hdel(HASH_KEY, str(event.sender.id))
+        await event.reply("Deleted region.")
         raise events.StopPropagation
+
