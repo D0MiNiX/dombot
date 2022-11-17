@@ -11,7 +11,8 @@ from functions import command, command_with_args
 from functools import partial
 from datetime import datetime, timedelta
 import arrow
-
+from monsters import r
+from region import HASH_KEY
 
 HELP_FOLDER = "dombot/rss/help"
 def_jobstore = SQLAlchemyJobStore(url="sqlite:///dombot/rss/databases/sqlite/reminders/jobs.db")
@@ -139,17 +140,14 @@ def get_interval(interval, repeat):
 
 
 def get_start_time(start_time, sender_id):
-    regions_db = r"dombot/rss/databases/sqlite/regions.db"
-    db = Database(regions_db)
     region = False
-    res = db.select_single(f"SELECT region FROM regions WHERE user_id={sender_id}")
-    if isinstance(res, Exception):
-        pass
-    else:
-        region = res
-    db.close_all()
+    ret = r.hget(HASH_KEY, str(sender_id))
+
+    if ret:
+        region = ret
+
     start_time_t = ""
-    
+
     if re.match(r"^(\d+\.)?\d+$", start_time):
         if start_time.isdigit():
             secs = int(start_time)
