@@ -226,8 +226,8 @@ async def trigger_change_confirmation(event):
 			del data_for_callback[event.chat_id]
 		raise events.StopPropagation()
 
-	text = re.findall(r"replace the (\S+) trigger", message.text)[0]
-	
+	text = re.findall(r"replace the (.+?) trigger", message.text)[0]
+
 	if data == "yes_tr":
 		event_data = data_for_callback[event.chat_id][event.message_id][0]
 		reply_data = data_for_callback[event.chat_id][event.message_id][1]
