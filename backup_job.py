@@ -10,7 +10,7 @@ job_scheduler = AsyncIOScheduler()
 
 async def create_and_send_backup():
     # Copy the database so it can be contained in backup
-    subprocess.run("echo 'zxc' | sudo -S cp /var/lib/redis/dump.rdb .".split())
+    subprocess.run("echo 'd6@&We63cSe$!sL' | sudo -S cp /var/lib/redis/dump.rdb .".split())
     dir_name = os.path.basename(os.getcwd())
     current_time = arrow.now().format("DD_MM_YYYY-HH_mm_ss")
     bot_dir = os.getcwd()
@@ -35,7 +35,7 @@ def get_job_sched():
     return job_scheduler
 
 async def quest(arg):
-    await vars.dom.send_message(vars.BOT_TESTING, arg)
+    await vars.bot.send_message(vars.BOT_TESTING, arg)
 
 def sched_cw_jbs(job_sched):
     # quest
