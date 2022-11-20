@@ -427,3 +427,26 @@ async def triggers(event):
 								f"Better, remove the trigger.")
 
 		raise events.StopPropagation
+
+MONKE_CHAT_ID = -721939051 # TODO: Change to real monke chat id
+n = 0
+import random
+
+@events.register(events.NewMessage(chats=[MONKE_CHAT_ID]))
+async def title_of_yr_stape(event):
+	global n
+	text = event.raw_text
+	len_txt = len(text)
+
+	if 10 < len_txt < 25 or not text.isascii():
+		return
+
+	n += 1
+
+	if n < 500:
+		return
+
+	if random.random() < 0.002:
+		await event.reply("TITLE OF YOUR SEXTAPE!")
+		n = 0
+		raise events.StopPropagation
