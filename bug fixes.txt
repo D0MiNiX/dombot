@@ -1,4 +1,5 @@
 https://github.com/LonamiWebs/Telethon/pull/3255/commits/53418481907f7e8ecb549898318ea96242392373
+telethon/utils.py
 
 	if not size:
 		return None
