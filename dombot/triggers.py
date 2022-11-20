@@ -445,7 +445,7 @@ async def title_of_yr_stape(event):
 	text = event.raw_text
 	len_txt = len(text)
 
-	if not 10 <= len_txt <= 25 or not text.isascii():
+	if not 5 <= len_txt <= 40 or not text.isascii():
 		return
 
 	n = int(r.get(HASH_KEY))
