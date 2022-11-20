@@ -428,7 +428,7 @@ async def triggers(event):
 
 		raise events.StopPropagation
 
-MONKE_CHAT_ID = -721939051 # TODO: Change to real monke chat id
+MONKE_CHAT_ID = -1001352937293 
 n = 0
 import random
 
@@ -438,7 +438,7 @@ async def title_of_yr_stape(event):
 	text = event.raw_text
 	len_txt = len(text)
 
-	if 10 < len_txt < 25 or not text.isascii():
+	if not 10 <= len_txt <= 25 or not text.isascii():
 		return
 
 	n += 1
