@@ -431,17 +431,26 @@ async def triggers(event):
 MONKE_CHAT_ID = -1001352937293 
 n = 0
 import random
+from dombot.monsters import r
+HASH_KEY = "monke_n"
+
+if not r.exists(HASH_KEY):
+	r.set(HASH_KEY, n)
+else:
+	n = int(r.get(HASH_KEY))
 
 @events.register(events.NewMessage(chats=[MONKE_CHAT_ID]))
 async def title_of_yr_stape(event):
-	global n
+	global n, HASH_KEY
 	text = event.raw_text
 	len_txt = len(text)
 
 	if not 10 <= len_txt <= 25 or not text.isascii():
 		return
 
+	n = int(r.get(HASH_KEY))
 	n += 1
+	r.set(HASH_KEY, str(n))
 
 	if n < 500:
 		return
@@ -449,4 +458,5 @@ async def title_of_yr_stape(event):
 	if random.random() < 0.002:
 		await event.reply("TITLE OF YOUR SEXTAPE!")
 		n = 0
+		r.set(HASH_KEY, str(n))
 		raise events.StopPropagation
