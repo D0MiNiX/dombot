@@ -455,7 +455,7 @@ async def title_of_yr_stape(event):
 	if n < 500:
 		return
 
-	if random.random() < 0.002:
+	if random.random() < 0.5:
 		await event.reply("TITLE OF YOUR SEXTAPE!")
 		n = 0
 		r.set(HASH_KEY, str(n))
