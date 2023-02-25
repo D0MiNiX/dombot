@@ -37,6 +37,7 @@ def main():
 
     # triggers
     bot.add_event_handler(triggers.triggers)
+    bot.add_event_handler(triggers.title_of_yr_stape)
 
     # typo tales - pick random player from guild member list
     bot.add_event_handler(dragon_egg.random_pick)
