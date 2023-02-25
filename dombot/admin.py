@@ -38,7 +38,7 @@ async def admin_only(event):
 
         try:
             user = await bot_vars.bot.get_entity(expression)
-            if isinstance(user, tl_types.User):
+            if isinstance(user, types.User):
                 full = await bot_vars.bot(GetFullUserRequest(expression))
             else:
                 full = await bot_vars.bot(GetFullChannelRequest(expression))
