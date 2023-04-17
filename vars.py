@@ -7,11 +7,11 @@ API_HASH    =   os.getenv('API_HASH')
 TOKEN       =   os.getenv('TOKEN')
 
 # dombot
-bot = TelegramClient('bot', int(API_ID), API_HASH).start(bot_token=TOKEN)
+bot = TelegramClient('bot', int(API_ID), API_HASH, connection_retries = None, retry_delay = 60).start(bot_token=TOKEN)
 
 # user bot
 ssn = "user_bot/dom_user_bot"
-dom = TelegramClient(ssn, int(API_ID), API_HASH).start()
+dom = TelegramClient(ssn, int(API_ID), API_HASH, connection_retries = None, retry_delay = 60).start()
  
 runSinceTime = str(datetime.now().strftime("%H:%M:%S"))
 runSinceDate = str(datetime.now().strftime("%d/%m/%y"))
