@@ -4,7 +4,7 @@ from vars import bot, dom, D0MiNiX
 def main():
     from dombot.typo_tales.dragon_egg import dragon_egg
     from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, \
-                        reminders, region, idle_list_ping, vpb_thres
+                        reminders, region, idle_list_ping, vpb_thres, filters
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
@@ -39,8 +39,11 @@ def main():
     bot.add_event_handler(triggers.triggers)
     bot.add_event_handler(triggers.title_of_yr_stape)
 
+    # filters
+    bot.add_event_handler(filters.filters)
+
     # typo tales - pick random player from guild member list
-    bot.add_event_handler(dragon_egg.random_pick)
+    # bot.add_event_handler(dragon_egg.random_pick)
 
     # tts
     bot.add_event_handler(tts.tts)
