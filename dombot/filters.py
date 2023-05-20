@@ -6,11 +6,13 @@ from telethon.errors.rpcerrorlist import MessageIdInvalidError
 import vars as bot_vars
 from functools import partial
 from functions import command, command_with_args
+import threading, asyncio
 
 
 filters_dict = {}
 data_for_callback = {}
 db_conn = None
+lock = threading.Lock()
 
 
 try:
@@ -249,6 +251,67 @@ async def filter_change_confirmation(event):
 		raise events.StopPropagation
 
 
+async def send_exception(text, event):
+    await event.reply(text)
+
+
+async def send_filter_response(event):
+	word = [x for x in event.raw_text.lower().split() if x in filters_dict[event.chat_id]]
+
+	if not word:
+		return #raise events.StopPropagation
+
+	db_query = DatabaseQuery(table_name=event.chat_id, values=["file_id", "filter_text", "msg_id", "is_fwd"], \
+								filt_name=word[0])
+	response = db_query.select_single()
+
+	if isinstance(response, str):
+		await event.reply(f"Error sending the filter. {response}")
+
+	file_id = response[0][0]
+	text = response[0][1]
+	msg_id = response[0][2]
+	is_fwd = response[0][3]
+
+	try:
+		if text != "":
+			if is_fwd:
+				await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+			else:
+				await event.respond(text)
+		elif file_id != "":
+			if is_fwd:
+				await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+			else:
+				await event.respond(file=file_id)
+		else:
+			try:
+				msg = await bot_vars.bot.get_messages(event.chat_id, ids=msg_id)
+				if is_fwd:
+					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+				else:
+					await bot_vars.bot.send_message(event.chat_id, message=msg)
+			except Exception as e:
+				try:
+					# game bots like @gamee causes above exception
+					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+				except Exception as e:
+					await event.reply(f"Error sending the filter. {e.args[0]}")
+	except MessageIdInvalidError:
+		await event.reply(f"Message doesn't exists in this chat anymore, hence, can't be forwarded." + \
+							f"Better, remove the filter.")
+
+def filter_process_thread(event, loop):
+	global lock
+	lock.acquire()
+
+	try:
+		loop.call_soon_threadsafe(loop.create_task, send_filter_response(event))
+	except Exception as e:
+		loop.call_soon_threadsafe(loop.create_task, send_exception(str(e), event))
+
+	lock.release()
+
 @events.register(events.NewMessage())
 async def filters(event):
 
@@ -385,50 +448,6 @@ async def filters(event):
 		raise events.StopPropagation
 
 	elif event.chat_id in filters_dict:
-		event_text = event.raw_text.lower()
-		word = [x for x in event_text.split() if x in filters_dict[event.chat_id]]
-		
-		if not word:
-			raise events.StopPropagation
-
-		db_query = DatabaseQuery(table_name=event.chat_id, values=["file_id", "filter_text", "msg_id", "is_fwd"], \
-									filt_name=word[0])
-		response = db_query.select_single()
-
-		if isinstance(response, str):
-			await event.reply(f"Error sending the filter. {response}")
-
-		file_id = response[0][0]
-		text = response[0][1]
-		msg_id = response[0][2]
-		is_fwd = response[0][3]
-
-		try:
-			if text != "":
-				if is_fwd:
-					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-				else:
-					await event.respond(text)
-			elif file_id != "":
-				if is_fwd:
-					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-				else:
-					await event.respond(file=file_id)
-			else:
-				try:
-					msg = await bot_vars.bot.get_messages(event.chat_id, ids=msg_id)
-					if is_fwd:
-						await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-					else:
-						await bot_vars.bot.send_message(event.chat_id, message=msg)
-				except Exception as e:
-					try:
-						# game bots like @gamee causes above exception
-						await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-					except Exception as e:
-						await event.reply(f"Error sending the filter. {e.args[0]}")
-		except MessageIdInvalidError:
-			await event.reply(f"Message doesn't exists in this chat anymore, hence, can't be forwarded." + \
-								f"Better, remove the filter.")
-
+		fil_thread = threading.Thread(target=filter_process_thread, args=(event, asyncio.get_running_loop()))
+		fil_thread.start()
 		raise events.StopPropagation
