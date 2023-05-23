@@ -301,6 +301,8 @@ async def send_filter_response(event):
 		await event.reply(f"Message doesn't exists in this chat anymore, hence, can't be forwarded." + \
 							f"Better, remove the filter.")
 
+	raise events.StopPropagation
+
 def filter_process_thread(event, loop):
 	global lock
 	lock.acquire()
@@ -450,4 +452,4 @@ async def filters(event):
 	elif event.chat_id in filters_dict:
 		fil_thread = threading.Thread(target=filter_process_thread, args=(event, asyncio.get_running_loop()))
 		fil_thread.start()
-		raise events.StopPropagation
+		# raise events.StopPropagation

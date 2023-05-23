@@ -2,7 +2,7 @@ from vars import bot, dom, D0MiNiX
 
 
 def main():
-    from dombot.typo_tales.dragon_egg import dragon_egg
+    # from dombot.typo_tales.dragon_egg import dragon_egg
     from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, \
                         reminders, region, idle_list_ping, vpb_thres, filters
     from user_bot import blek_magic, report_leaders
