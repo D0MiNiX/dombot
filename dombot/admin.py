@@ -6,6 +6,7 @@ from telethon.tl.functions.users import GetFullUserRequest
 from telethon import events
 import vars as bot_vars
 from dombot.start import spam_dict
+import netifaces as ni
 
 @events.register(events.NewMessage(chats=[bot_vars.D0MiNiX],
                                    from_users=[bot_vars.D0MiNiX], forwards=False))
@@ -19,6 +20,11 @@ async def admin_only(event):
             event,
             RunSince={"Running since": str(bot_vars.runSinceDate) + ', ' + str(bot_vars.runSinceTime)}
         )
+        raise events.StopPropagation
+
+    elif incomingText == '/get_ip':
+        ip = ni.ifaddresses('enp1s0')[ni.AF_INET][0]['addr']
+        await event.respond(str(ip))
         raise events.StopPropagation
 
     elif Command(incomingText, '/whois'):
