@@ -17,7 +17,7 @@ else:
 BOT_TESTING = -1001460951730
 CW_ELITE_BOT = 5233916499
 CW_BOT = 408101137
-me_regex = re.compile(r"Battle of the nine castles in")
+me_regex = re.compile(r"Battle of the nine castles in|Fortress battle")
 stam_full_text = "Stamina restored. You are ready for more adventures!"
 foray_intervene = "You were strolling around on your horse when you noticed"
 quest_start_txt = "Arena isn't a place for the weak. Here you fight against other players and if you stand victorious, you acquire precious experience."
