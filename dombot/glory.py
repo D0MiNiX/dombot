@@ -21,23 +21,39 @@ def pre_check(e):
 @events.register(events.NewMessage(pattern=glory_regex, forwards=True, func=lambda e: pre_check(e)))
 async def cal_glory(event):
     target = r.get("target_glory")
+    prev = r.get("previous_glory")
 
     if not target:
         r.set("target_glory", str(TARGET_GLORY))
         target = TARGET_GLORY
 
+    if not prev:
+        r.set("previous_glory", str(0))
+        prev = 0
+
     target = int(target)
+    prev = int(prev)
 
     glory = re.findall(r"Glory: (\d+)/\d+", event.raw_text, flags=re.M)
     glory = int(glory[0])
     diff = target - glory
+    prev_diff = glory - prev
 
-    if diff > 0:
-        progress = round((float(glory / target) * 100), 2)
-        string = f"Current glory: {glory}" + '\n'
-        string += f"Target glory: {target}" + '\n'
-        string += f"Remaining glory: {diff}" + '\n'
-        string += f"% progress : {progress}%"
-        await event.respond(string)
+    progress = round((float(glory / target) * 100), 2)
+    string = f"Current glory: {glory}" + '\n'
+    string += f"Target glory: {target}" + '\n'
+    string += f"Remaining glory: {diff}" + '\n'
+    string += f"% progress : {progress}%" + '\n' + '\n'
 
+    if prev_diff > 0:
+        perc = round((float(prev_diff / glory) * 100), 2)
+        string += f"This battle's glory gain compared to previous one: {prev_diff} ({perc})%"
+    elif prev_diff < 0:
+        perc = round((float(abs(prev_diff) / glory) * 100), 2)
+        string += f"This battle's glory loss compared to previous one: -{prev_diff} -({perc})%"
+    else:
+        string += "No glory difference compared to previous battle!"
+
+    r.set("previous_glory", str(glory))
+    await event.respond(string)
     raise events.StopPropagation
