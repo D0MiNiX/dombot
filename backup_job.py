@@ -47,14 +47,16 @@ def sched_cw_jbs(job_sched):
     # arena
     job_sched.add_job(quest, args=["arn"], trigger='cron', hour=13, minute=46, misfire_grace_time=None)
 
-
 def create_backup_job():
     from user_bot.vpb_reminder import remind_vpb
+    from user_bot.glory_reminder import remind_glory
     global job_scheduler
     job_scheduler.configure(timezone="Asia/Kolkata")
     job_scheduler.start()
     job_scheduler.add_job(create_and_send_backup, 'cron', hour='20', minute='00')
     job_scheduler.add_job(rdb_backup, 'cron', hour="*", minute="*/30", misfire_grace_time=None)
     job_scheduler.add_job(remind_vpb, 'cron', hour=21, minute=0, misfire_grace_time=None)
+    job_scheduler.add_job(remind_glory, 'cron', hour=12, minute=45, misfire_grace_time=None)
+    job_scheduler.add_job(remind_glory, 'cron', hour=20, minute=45, misfire_grace_time=None)
+    job_scheduler.add_job(remind_glory, 'cron', hour=4, minute=45, misfire_grace_time=None)
     #sched_cw_jbs(job_scheduler)
-

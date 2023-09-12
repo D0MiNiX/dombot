@@ -1,33 +1,43 @@
 from telethon import events
 import re, vars
 from datetime import datetime
+from dombot.monsters import r
 
+glory_regex = re.compile(r"^.*?Glory: \d+/\d+", flags=re.S)
+TARGET_GLORY = 17000
 
-@events.register(events.NewMessage(chats=[vars.BOT_POD_GRP, vars.D0MiNiX]))
+def pre_check(e):
+    if e.forward is None or e.chat_id not in [vars.BOT_POD_GRP, vars.D0MiNiX]:
+        return False
+
+    if e.forward.from_id is None or not hasattr(e.forward.from_id, "user_id"):
+        return False
+
+    if not e.forward.from_id.user_id == vars.CW_BOT:
+        return False
+
+    return True
+
+@events.register(events.NewMessage(pattern=glory_regex, forwards=True, func=lambda e: pre_check(e)))
 async def cal_glory(event):
+    target = r.get("target_glory")
 
-    if event.message.forward is not None and event.message.forward.from_id.user_id == 408101137 and \
-         "🌑[POD] Pint Of Deer" in event.raw_text and re.search(r"🏅Level: (\d+) 🎖Glory: (\d+)", event.raw_text):
-        timeFormat = '%m-%d-%y %H:%M:%S'
-        eventTime = datetime.strptime(event.message.forward.date.strftime(timeFormat), timeFormat)
-        CurrTime = datetime.utcnow().strftime(timeFormat)
-        CurrTime = datetime.strptime(CurrTime, timeFormat)
+    if not target:
+        r.set("target_glory", str(TARGET_GLORY))
+        target = TARGET_GLORY
 
-        if (CurrTime - eventTime).total_seconds() > 600:
-            await event.reply("Old. Max 10 mins older.")
-            raise events.StopPropagation
+    target = int(target)
 
-        vars.cur.execute("SELECT * from glory;")
-        x = vars.cur.fetchall()
-        RemBtls = x[0][0]
-        TargetGlory = 16000
-        CurrentGlory = int(re.findall(r"🎖Glory: (\d+)", event.raw_text)[0])
-        GainedGlory = CurrentGlory - x[0][1]
-        vars.cur.execute(f"UPDATE glory SET glory_gained={CurrentGlory};")
-        vars.conn.commit()
-        RemainingGlory = TargetGlory - CurrentGlory
-        string = "Remaining glory : " + str(RemainingGlory) + "\n" + "Required glory per battle : " + \
-                 str(round(RemainingGlory / RemBtls)) + "\nBattles remaining : " + str(RemBtls) + "\n" + \
-                 "Glory Gained : " + str(GainedGlory)
-        await event.reply(string)
-        raise events.StopPropagation
+    glory = re.findall(r"Glory: (\d+)/\d+", event.raw_text, flags=re.M)
+    glory = int(glory[0])
+    diff = target - glory
+
+    if diff > 0:
+        progress = round((float(glory / target) * 100), 2)
+        string = f"Current glory: {glory}" + '\n'
+        string += f"Target glory: {target}" + '\n'
+        string += f"Remaining glory: {diff}" + '\n'
+        string += f"% progress : {progress}%"
+        await event.respond(string)
+
+    raise events.StopPropagation

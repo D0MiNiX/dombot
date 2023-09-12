@@ -4,7 +4,7 @@ from vars import bot, dom, D0MiNiX
 def main():
     # from dombot.typo_tales.dragon_egg import dragon_egg
     from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, \
-                        reminders, region, idle_list_ping, vpb_thres, filters
+                        reminders, region, idle_list_ping, vpb_thres, filters, glory
     from user_bot import blek_magic, report_leaders
     from backup_job import create_backup_job
     from dombot.text_to_speech import tts
@@ -59,6 +59,9 @@ def main():
 
     # vpb threshold
     bot.add_event_handler(vpb_thres.calc_vpbs)
+
+    # cal glory
+    bot.add_event_handler(glory.cal_glory)
 
     # Update your CW level
     # bot.add_event_handler(blek_magic.set_current_level)
