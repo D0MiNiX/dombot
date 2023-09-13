@@ -5,6 +5,7 @@ from dombot.monsters import r
 
 glory_regex = re.compile(r"^.*?Glory: \d+/\d+", flags=re.S)
 TARGET_GLORY = 17000
+TARGET_BATTLES = 273 
 
 def pre_check(e):
     if e.forward is None or e.chat_id not in [vars.BOT_POD_GRP, vars.D0MiNiX]:
@@ -22,6 +23,7 @@ def pre_check(e):
 async def cal_glory(event):
     target = r.get("target_glory")
     prev = r.get("previous_glory")
+    battles_done = r.get("battles_done")
 
     if not target:
         r.set("target_glory", str(TARGET_GLORY))
@@ -31,8 +33,13 @@ async def cal_glory(event):
         r.set("previous_glory", str(0))
         prev = 0
 
+    if not battles_done:
+        r.set("battles_done", str(0))
+        battles_done = 0
+
     target = int(target)
     prev = int(prev)
+    battles_done = int(battles_done)
 
     glory = re.findall(r"Glory: (\d+)/\d+", event.raw_text, flags=re.M)
     glory = int(glory[0])
@@ -40,14 +47,24 @@ async def cal_glory(event):
     prev_diff = glory - prev
 
     progress = round((float(glory / target) * 100), 2)
-    progress_diff = progress - round((float(prev / target) * 100), 2)
+    progress_diff = round(progress - round((float(prev / target) * 100), 2), 2)
+    battles_progress = round((float(battles_done / TARGET_BATTLES) * 100), 2)
+
     string = f"Current glory: {glory}" + '\n'
     string += f"Previous battle glory: {prev}" + '\n'
-    string += (f"Glory gain compared to previous battle: {progress_diff}%" \
-               if progress_diff >= 0 else f"Glory loss compared to previous battle: {progress_diff}%") + '\n'
+
+    if progress_diff > 0:
+        string += f"Glory gain compared to previous battle: {progress_diff}%"
+    elif progress_diff < 0:
+        string += f"Glory loss compared to previous battle: {progress_diff}%"
+    else:
+        string += "No glory progress this battle!"
+
+    string += '\n'
     string += f"Target glory: {target}" + '\n'
     string += f"Remaining glory: {diff}" + '\n'
-    string += f"Total %age progress: {progress}%" + '\n' + '\n'
+    string += f"Total %age progress: {progress}%" + '\n'
+    string += f"Battles ramaining: {(TARGET_BATTLES - battles_done)} ({battles_progress}%)" + '\n'
 
     if prev_diff > 0:
         perc = round((float(prev_diff / glory) * 100), 2)
@@ -59,5 +76,7 @@ async def cal_glory(event):
         string += "No glory difference compared to previous battle!"
 
     r.set("previous_glory", str(glory))
+    battles_done += 1
+    r.set("battles_done", str(battles_done))
     await event.respond(string)
     raise events.StopPropagation
