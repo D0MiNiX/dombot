@@ -8,7 +8,7 @@ TARGET_GLORY = 17000
 TARGET_BATTLES = 273 
 
 def pre_check(e):
-    if e.forward is None or e.chat_id not in [vars.BOT_POD_GRP, vars.D0MiNiX]:
+    if e.forward is None or e.chat_id != vars.D0MiNiX:
         return False
 
     if e.forward.from_id is None or not hasattr(e.forward.from_id, "user_id"):
@@ -44,7 +44,8 @@ async def cal_glory(event):
     glory = re.findall(r"Glory: (\d+)/\d+", event.raw_text, flags=re.M)
     glory = int(glory[0])
     diff = target - glory
-    prev_diff = glory - prev
+    # prev_diff = glory - prev
+    battles_done += 1
 
     progress = round((float(glory / target) * 100), 2)
     progress_diff = round(progress - round((float(prev / target) * 100), 2), 2)
@@ -54,29 +55,28 @@ async def cal_glory(event):
     string += f"Previous battle glory: {prev}" + '\n'
 
     if progress_diff > 0:
-        string += f"Glory gain compared to previous battle: {progress_diff}%"
+        string += f"Glory gain: {progress_diff}%"
     elif progress_diff < 0:
-        string += f"Glory loss compared to previous battle: {progress_diff}%"
+        string += f"Glory loss: {progress_diff}%"
     else:
-        string += "No glory progress this battle!"
+        string += "No glory change!"
 
     string += '\n'
     string += f"Target glory: {target}" + '\n'
     string += f"Remaining glory: {diff}" + '\n'
     string += f"Total %age progress: {progress}%" + '\n'
-    string += f"Battles ramaining: {(TARGET_BATTLES - battles_done)} ({battles_progress}%)" + '\n'
+    string += f"Season's progress (battles): {battles_done}/{TARGET_BATTLES} ({battles_progress}%)" + '\n'
 
-    if prev_diff > 0:
-        perc = round((float(prev_diff / glory) * 100), 2)
-        string += f"This battle's glory gain compared to previous one: {prev_diff} ({perc}%)"
-    elif prev_diff < 0:
-        perc = round((float(abs(prev_diff) / glory) * 100), 2)
-        string += f"This battle's glory loss compared to previous one: -{prev_diff} -({perc}%)"
-    else:
-        string += "No glory difference compared to previous battle!"
+    # if prev_diff > 0:
+    #     perc = round((float(prev_diff / glory) * 100), 2)
+    #     string += f"This battle's glory gain compared to previous one: {prev_diff} ({perc}%)"
+    # elif prev_diff < 0:
+    #     perc = round((float(abs(prev_diff) / glory) * 100), 2)
+    #     string += f"This battle's glory loss compared to previous one: -{prev_diff} -({perc}%)"
+    # else:
+    #     string += "No glory difference compared to previous battle!"
 
     r.set("previous_glory", str(glory))
-    battles_done += 1
     r.set("battles_done", str(battles_done))
     await event.respond(string)
     raise events.StopPropagation
