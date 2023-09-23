@@ -22,4 +22,5 @@
 • /toss - flip a coin.
 • /triggers_info - gives detailed information on each trigger. Alternative is /tr_info.
 • /triggers - lists the triggers.
+• /tts <text> | <language_code> - converts given text to the speech using provided langage_code. If no langage_code is provided, US English (en) will be used.
 • /utc - shows current time in UTC.

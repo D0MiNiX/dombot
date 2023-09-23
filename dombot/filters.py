@@ -6,16 +6,17 @@ from telethon.errors.rpcerrorlist import MessageIdInvalidError
 import vars as bot_vars
 from functools import partial
 from functions import command, command_with_args
+import threading, asyncio
 
 
-triggers_dict = {}
+filters_dict = {}
 data_for_callback = {}
-TRIGGERS_FOLDER = "triggers_data"
 db_conn = None
+lock = threading.Lock()
 
 
 try:
-    db_conn = db.connect(r"dombot/rss/databases/sqlite/triggers.db", isolation_level=None)
+    db_conn = db.connect(r"dombot/rss/databases/sqlite/filters.db", isolation_level=None)
 except Exception as e:
     error = e.args[1]
     bot_vars.bot.send_message(bot_vars.D0MiNiX, error)
@@ -28,19 +29,19 @@ for table in db_cursor:
     tables.append(int(table[0]))
 
 for table in tables:
-    db_cursor.execute(f"SELECT trigger_name FROM `{table}`;")
-    triggers_dict[table] = []
+    db_cursor.execute(f"SELECT filter_name FROM `{table}`;")
+    filters_dict[table] = []
     for data in db_cursor:
-        triggers_dict[table].append(data[0])
+        filters_dict[table].append(data[0])
 
 db_cursor.close()
 
 
 class DatabaseQuery:
-	def __init__(self, table_name=None, values=None, trig_name=None):
+	def __init__(self, table_name=None, values=None, filt_name=None):
 		self.table_name = table_name
 		self.values = values
-		self.trig_name = trig_name
+		self.filt_name = filt_name
 		self.mycursor = db_conn.cursor()
 
 	def select_multiple(self, column=None, value=None):
@@ -56,9 +57,9 @@ class DatabaseQuery:
 	def select_single(self):
 		try:
 			values = ", ".join(self.values)
-			query = f"SELECT {values} FROM `{self.table_name}` WHERE trigger_name=?"
-			trig_name = (self.trig_name,)
-			self.mycursor.execute(query, trig_name)
+			query = f"SELECT {values} FROM `{self.table_name}` WHERE filter_name=?"
+			filt_name = (self.filt_name,)
+			self.mycursor.execute(query, filt_name)
 			result = [k for k in self.mycursor]
 			return result
 		except Exception as err:
@@ -98,7 +99,7 @@ class DatabaseQuery:
 	def delete(self):
 		try:
 			values = tuple(self.values)
-			query = f"DELETE FROM `{self.table_name}` WHERE trigger_name=?;"
+			query = f"DELETE FROM `{self.table_name}` WHERE filter_name=?;"
 			self.mycursor.execute(query, values)
 			if self.mycursor.rowcount == 0:
 				return "No data"
@@ -106,7 +107,7 @@ class DatabaseQuery:
 			return err.args[0]
 
 
-class Triggers:
+class Filters:
 	def __init__(self, event_data, reply_data=None):
 		self.is_fwd = 0
 		self.chat_id = event_data.chat_id
@@ -115,8 +116,8 @@ class Triggers:
 		else:
 			self.sender_info = str(event_data.sender.id)
 		self.current_utc = datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
-		self.trig_name = event_data.raw_text.split(" ", 1)[1]
-		self.trig_name = self.trig_name.lower()
+		self.filt_name = event_data.raw_text.split(" ", 1)[1]
+		self.filt_name = self.filt_name.lower()
 		if hasattr(reply_data, "id"):
 			self.msg_id = reply_data.id
 		else:
@@ -147,8 +148,8 @@ class Triggers:
 
 	def check_table_existence(self, table_name):
 		error = None
-		fields = ["trigger_name VARCHAR(64) PRIMARY KEY", "file_id VARCHAR(256)", 
-					"trigger_text VARCHAR(4096)", "msg_id INT", "added_by VARCHAR(128)", "added_on VARCHAR(32)",
+		fields = ["filter_name VARCHAR(64) PRIMARY KEY", "file_id VARCHAR(256)", 
+					"filter_text VARCHAR(4096)", "msg_id INT", "added_by VARCHAR(128)", "added_on VARCHAR(32)",
 					"is_fwd BOOLEAN"]
 		db_query = DatabaseQuery(table_name=self.chat_id, values=fields)
 		tables_list = db_query.show_tables()
@@ -169,7 +170,7 @@ class Triggers:
 		if isinstance(error, str):
 			return error
 
-		db_query = DatabaseQuery(table_name=self.chat_id, values=[self.trig_name, self.file_id, \
+		db_query = DatabaseQuery(table_name=self.chat_id, values=[self.filt_name, self.file_id, \
 									 							  self.response, self.msg_id, \
 																  self.sender_info, \
 																  self.current_utc, self.is_fwd])
@@ -181,17 +182,17 @@ class Triggers:
 		if self.chat_id not in dict_to_save.keys():
 			dict_to_save[self.chat_id] = []
 
-		dict_to_save[self.chat_id].append(self.trig_name)
+		dict_to_save[self.chat_id].append(self.filt_name)
 		return error
 
 	def remove(self, dict_to_save):
-		db_query = DatabaseQuery(table_name=self.chat_id, values=[self.trig_name])
+		db_query = DatabaseQuery(table_name=self.chat_id, values=[self.filt_name])
 		error = db_query.delete()
 
 		if error:
 			return error
 
-		dict_to_save[self.chat_id].remove(self.trig_name)
+		dict_to_save[self.chat_id].remove(self.filt_name)
 		return error
 
 	def replace(self, dict_to_save):
@@ -206,11 +207,11 @@ class Triggers:
 
 
 @bot_vars.bot.on(events.CallbackQuery)
-async def trigger_change_confirmation(event):
+async def filter_change_confirmation(event):
 
 	data = event.data.decode("UTF-8")
 
-	if not re.match(r"yes_tr|no_tr", data):
+	if not re.match(r"yes_fr|no_fr", data):
 		return
 
 	message = await event.get_message()
@@ -226,17 +227,17 @@ async def trigger_change_confirmation(event):
 			del data_for_callback[event.chat_id]
 		raise events.StopPropagation()
 
-	text = re.findall(r"replace the (.+?) trigger", message.text)[0]
+	text = re.findall(r"replace the (.+?) filter", message.text)[0]
 
-	if data == "yes_tr":
+	if data == "yes_fr":
 		event_data = data_for_callback[event.chat_id][event.message_id][0]
 		reply_data = data_for_callback[event.chat_id][event.message_id][1]
-		error = Triggers(event_data, reply_data).replace(triggers_dict)
+		error = Filters(event_data, reply_data).replace(filters_dict)
 
 		if error:
 			await event.edit(f"Error in database, please try again. {error}")
 		else:
-			await event.edit(f"Replaced the {text} trigger successfully.")
+			await event.edit(f"Replaced the {text} filter successfully.")
 
 		del data_for_callback[event.chat_id][event.message_id]
 		# Remove the chat id key if there are no more replacements awaiting for that chat
@@ -244,106 +245,169 @@ async def trigger_change_confirmation(event):
 			del data_for_callback[event.chat_id]
 		raise events.StopPropagation
 	else:
-		# If the replaced trigger is of text type, the file gets created first, 
+		# If the replaced filter is of text type, the file gets created first, 
 		# so need to delete here
 		await event.edit(f"Alright, no change then. Keeping {text} as it is.")
 		raise events.StopPropagation
 
 
+async def send_exception(text, event):
+    await event.reply(text)
+
+
+async def send_filter_response(event):
+	word = [x for x in event.raw_text.lower().split() if x in filters_dict[event.chat_id]]
+
+	if not word:
+		return #raise events.StopPropagation
+
+	db_query = DatabaseQuery(table_name=event.chat_id, values=["file_id", "filter_text", "msg_id", "is_fwd"], \
+								filt_name=word[0])
+	response = db_query.select_single()
+
+	if isinstance(response, str):
+		await event.reply(f"Error sending the filter. {response}")
+
+	file_id = response[0][0]
+	text = response[0][1]
+	msg_id = response[0][2]
+	is_fwd = response[0][3]
+
+	try:
+		if text != "":
+			if is_fwd:
+				await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+			else:
+				await event.respond(text)
+		elif file_id != "":
+			if is_fwd:
+				await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+			else:
+				await event.respond(file=file_id)
+		else:
+			try:
+				msg = await bot_vars.bot.get_messages(event.chat_id, ids=msg_id)
+				if is_fwd:
+					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+				else:
+					await bot_vars.bot.send_message(event.chat_id, message=msg)
+			except Exception as e:
+				try:
+					# game bots like @gamee causes above exception
+					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
+				except Exception as e:
+					await event.reply(f"Error sending the filter. {e.args[0]}")
+	except MessageIdInvalidError:
+		await event.reply(f"Message doesn't exists in this chat anymore, hence, can't be forwarded." + \
+							f"Better, remove the filter.")
+
+	raise events.StopPropagation
+
+def filter_process_thread(event, loop):
+	global lock
+	lock.acquire()
+
+	try:
+		loop.call_soon_threadsafe(loop.create_task, send_filter_response(event))
+	except Exception as e:
+		loop.call_soon_threadsafe(loop.create_task, send_exception(str(e), event))
+
+	lock.release()
+
 @events.register(events.NewMessage())
-async def triggers(event):
+async def filters(event):
 
 	cmd = partial(command, event.raw_text)
 	cmd_with_args = partial(command_with_args, event.raw_text)
 
-	if cmd_with_args("set_trigger") or cmd_with_args("set_tr"):
+	if cmd_with_args("set_filter") or cmd_with_args("set_fr"):
 
 		if not event.is_reply:
-			await event.reply("Please reply to a message that you want to set trigger as.")
+			await event.reply("Please reply to a message that you want to set filter as.")
 			raise events.StopPropagation
 
 		reply = await event.get_reply_message()
-		trig_name = event.raw_text.split(" ", 1)
+		filt_name = event.raw_text.split(" ", 1)
 
-		if len(trig_name) <= 1:
-			await event.reply(f"Duh!! Give some name. Correct usage: `/set_trigger <name>`.")
+		if len(filt_name) <= 1:
+			await event.reply(f"Duh!! Give some name. Correct usage: `/set_filter <name>`.")
 			raise events.StopPropagation
-		elif len(trig_name[1]) > 64:
-			await event.reply(f"Sorreh, can't accept trigger names with more than 64 characters for now.")
+		elif len(filt_name[1]) > 64:
+			await event.reply(f"Sorreh, can't accept filter names with more than 64 characters for now.")
 			raise events.StopPropagation
-		elif trig_name[1].startswith("/"):
-			await event.reply("No no no, bad idea to set a command as a trigger.")
+		elif filt_name[1].startswith("/"):
+			await event.reply("No no no, bad idea to set a command as a filter.")
 			raise events.StopPropagation
 
-		trigger_name = trig_name[1].lower()
+		filter_name = filt_name[1].lower()
 
-		error = Triggers(event, reply).save(triggers_dict)
+		error = Filters(event, reply).save(filters_dict)
 
 		if error and (error.startswith("UNIQUE") or "is not unique" in error):
-			buttons_layout = [Button.inline("Yes!", b"yes_tr"), Button.inline("Nope", b"no_tr")]
-			msg_id = await event.reply(f"Trigger already exists. Do you want to replace the"
-										f" `{trigger_name}` trigger?", buttons=buttons_layout)
+			buttons_layout = [Button.inline("Yes!", b"yes_fr"), Button.inline("Nope", b"no_fr")]
+			msg_id = await event.reply(f"Filter already exists. Do you want to replace the"
+										f" `{filter_name}` filter?", buttons=buttons_layout)
 			if event.chat_id not in data_for_callback:
 				data_for_callback[event.chat_id] = {}
 			data_for_callback[event.chat_id][msg_id.id] = [event, reply]
 			raise events.StopPropagation
 
 		if error is None:
-			await event.reply(f"Trigger `{trigger_name}` saved successfully.")
+			await event.reply(f"Filter `{filter_name}` saved successfully.")
 		else:
 			await event.reply(f"Error in database. {error}")
 
 		raise events.StopPropagation
 
-	elif cmd_with_args("rm_trigger") or cmd_with_args("rm_tr"):
-		trig_name = event.raw_text.split(" ", 1)
+	elif cmd_with_args("rm_filter") or cmd_with_args("rm_fr"):
+		filt_name = event.raw_text.split(" ", 1)
 
-		if len(trig_name) <= 1:
-			await event.reply(f"Duh!! Give some name. Correct usage: `/rm_trigger <name>`.")
+		if len(filt_name) <= 1:
+			await event.reply(f"Duh!! Give some name. Correct usage: `/rm_filter <name>`.")
 			raise events.StopPropagation
 
-		trigger_name = trig_name[1].lower()
-		error = Triggers(event).remove(triggers_dict)
+		filter_name = filt_name[1].lower()
+		error = Filters(event).remove(filters_dict)
 
 		if error == "No data":
-			await event.reply(f"Trigger `{trigger_name}` doesn't exist.")
+			await event.reply(f"Filter `{filter_name}` doesn't exist.")
 		elif error:
 			await event.reply(f"Error in database. {error}")
 		else:
-			await event.reply(f"Trigger `{trigger_name}` removed successfully.")
+			await event.reply(f"Filter `{filter_name}` removed successfully.")
 
 		# Clean up the table
-		if not triggers_dict[event.chat_id]:
+		if not filters_dict[event.chat_id]:
 			try:
 				mycursor = db_conn.cursor()
 				query = f"DROP TABLE IF EXISTS `{event.chat_id}`;"
 				mycursor.execute(query)
-				await event.respond("...and with that last one, goes away all the triggers.")
+				await event.respond("...and with that last one, goes away all the filters.")
 			except Exception as err:
 				await event.reply(f"Error deleting `{event.chat_id}` table. {err.args[0]}")
 
 		raise events.StopPropagation
 
-	elif cmd("triggers_info") or cmd("tr_info"):
+	elif cmd("filters_info") or cmd("fr_info"):
 		response = ""
-		db_query = DatabaseQuery(table_name=event.chat_id, values=["trigger_name", "added_by", \
+		db_query = DatabaseQuery(table_name=event.chat_id, values=["filter_name", "added_by", \
 																	"added_on"])
 		error = db_query.select_multiple()
 		triggers_data = None
 
 		if isinstance(error, str) and error.startswith("no such table"):
-			await event.reply("No triggers found in this chat. Setup one using `/set_trigger <name>` and"
-								" remove using `/rm_trigger <name>`.")
+			await event.reply("No filters found in this chat. Setup one using `/set_filter <name>` and"
+								" remove using `/rm_filter <name>`.")
 			raise events.StopPropagation
 		else:
 			triggers_data = error
 
 		response_list = []
 		for count, data in enumerate(triggers_data, start=1):
-			trigger_name = data[0]
+			filter_name = data[0]
 			added_by = data[1]
 			added_on = data[2]
-			response = f"`{count}. " + f"{trigger_name} " + f"(@{added_by} - {added_on})`"
+			response = f"`{count}. " + f"{filter_name} " + f"(@{added_by} - {added_on})`"
 			response_list.append(response)
 
 		if response_list:
@@ -356,23 +420,23 @@ async def triggers(event):
 
 		raise events.StopPropagation
 
-	elif cmd("triggers"):
+	elif cmd("filters"):
 		response = ""
-		db_query = DatabaseQuery(table_name=event.chat_id, values=["trigger_name"])
+		db_query = DatabaseQuery(table_name=event.chat_id, values=["filter_name"])
 		error = db_query.select_multiple()
 		triggers_data = None
 
 		if isinstance(error, str) and error.startswith("no such table"):
-			await event.reply("No triggers found in this chat. Setup one using `/set_trigger <name>` and"
-								" remove using `/rm_trigger <name>`.")
+			await event.reply("No filters found in this chat. Setup one using `/set_filter <name>` and"
+								" remove using `/rm_filter <name>`.")
 			raise events.StopPropagation
 		else:
 			triggers_data = error
 
 		response_list = []
 		for count, data in enumerate(triggers_data, start=1):
-			trigger_name = data[0]
-			response = f"`{count}.` " + f"`{trigger_name}`"
+			filter_name = data[0]
+			response = f"`{count}.` " + f"`{filter_name}`"
 			response_list.append(response)
 
 		if response_list:
@@ -381,82 +445,11 @@ async def triggers(event):
 			for resp in _lst:
 				await event.respond(new_line.join(resp))
 		else:
-			await event.respond("No triggers found in this chat. Start creating using `/set_trigger` command.")
+			await event.respond("No filters found in this chat. Start creating using `/set_filter` command.")
 
 		raise events.StopPropagation
 
-	elif event.chat_id in triggers_dict and event.raw_text.lower() in triggers_dict[event.chat_id]:
-		db_query = DatabaseQuery(table_name=event.chat_id, values=["file_id", "trigger_text", "msg_id", "is_fwd"], \
-									trig_name=event.raw_text.lower())
-		response = db_query.select_single()
-
-		if isinstance(response, str):
-			await event.reply(f"Error sending the trigger. {response}")
-
-		file_id = response[0][0]
-		text = response[0][1]
-		msg_id = response[0][2]
-		is_fwd = response[0][3]
-
-		try:
-			if text != "":
-				if is_fwd:
-					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-				else:
-					await event.respond(text)
-			elif file_id != "":
-				if is_fwd:
-					await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-				else:
-					await event.respond(file=file_id)
-			else:
-				try:
-					msg = await bot_vars.bot.get_messages(event.chat_id, ids=msg_id)
-					if is_fwd:
-						await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-					else:
-						await bot_vars.bot.send_message(event.chat_id, message=msg)
-				except Exception as e:
-					try:
-						# game bots like @gamee causes above exception
-						await bot_vars.bot.forward_messages(event.chat_id, messages=msg_id, from_peer=event.chat_id)
-					except Exception as e:
-						await event.reply(f"Error sending the trigger. {e.args[0]}")
-		except MessageIdInvalidError:
-			await event.reply(f"Message doesn't exists in this chat anymore, hence, can't be forwarded." + \
-								f"Better, remove the trigger.")
-
-		raise events.StopPropagation
-
-MONKE_CHAT_ID = -1001352937293 
-n = 0
-import random
-from dombot.monsters import r
-HASH_KEY = "monke_n"
-
-if not r.exists(HASH_KEY):
-	r.set(HASH_KEY, n)
-else:
-	n = int(r.get(HASH_KEY))
-
-@events.register(events.NewMessage(chats=[MONKE_CHAT_ID]))
-async def title_of_yr_stape(event):
-	global n, HASH_KEY
-	text = event.raw_text
-	len_txt = len(text)
-
-	if not 5 <= len_txt <= 40 or not text.isascii():
-		return
-
-	n = int(r.get(HASH_KEY))
-	n += 1
-	r.set(HASH_KEY, str(n))
-
-	if n < 500:
-		return
-
-	if random.random() < 0.5:
-		await event.reply("TITLE OF YOUR SEXTAPE!")
-		n = 0
-		r.set(HASH_KEY, str(n))
-		raise events.StopPropagation
+	elif event.chat_id in filters_dict:
+		fil_thread = threading.Thread(target=filter_process_thread, args=(event, asyncio.get_running_loop()))
+		fil_thread.start()
+		# raise events.StopPropagation

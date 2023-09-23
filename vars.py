@@ -1,21 +1,17 @@
 from datetime import datetime
 from telethon.sync import TelegramClient
 import os
-import psycopg2
 
-API_ID     =   os.getenv('API_ID')
-API_HASH   =   os.getenv('API_HASH')
+API_ID      =   os.getenv('API_ID')
+API_HASH    =   os.getenv('API_HASH')
+TOKEN       =   os.getenv('TOKEN')
 
-DATABASE_URL    =   os.getenv('DATABASE_URL')
-conn            =   psycopg2.connect(DATABASE_URL, sslmode='require')
-cur             =   conn.cursor()
-
-TOKEN = os.getenv('TOKEN')
-bot = TelegramClient('bot', int(API_ID), API_HASH).start(bot_token=TOKEN)
+# dombot
+bot = TelegramClient('bot', int(API_ID), API_HASH, connection_retries = None, retry_delay = 60).start(bot_token=TOKEN)
 
 # user bot
 ssn = "user_bot/dom_user_bot"
-dom = TelegramClient(ssn, int(API_ID), API_HASH)#.start()
+dom = TelegramClient(ssn, int(API_ID), API_HASH, connection_retries = None, retry_delay = 60).start()
  
 runSinceTime = str(datetime.now().strftime("%H:%M:%S"))
 runSinceDate = str(datetime.now().strftime("%d/%m/%y"))

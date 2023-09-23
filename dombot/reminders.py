@@ -11,7 +11,8 @@ from functions import command, command_with_args
 from functools import partial
 from datetime import datetime, timedelta
 import arrow
-
+from dombot.monsters import r
+from dombot.region import HASH_KEY
 
 HELP_FOLDER = "dombot/rss/help"
 def_jobstore = SQLAlchemyJobStore(url="sqlite:///dombot/rss/databases/sqlite/reminders/jobs.db")
@@ -139,17 +140,14 @@ def get_interval(interval, repeat):
 
 
 def get_start_time(start_time, sender_id):
-    regions_db = r"dombot/rss/databases/sqlite/regions.db"
-    db = Database(regions_db)
     region = False
-    res = db.select_single(f"SELECT region FROM regions WHERE user_id={sender_id}")
-    if isinstance(res, Exception):
-        pass
-    else:
-        region = res
-    db.close_all()
+    ret = r.hget(HASH_KEY, str(sender_id))
+
+    if ret:
+        region = ret
+
     start_time_t = ""
-    
+
     if re.match(r"^(\d+\.)?\d+$", start_time):
         if start_time.isdigit():
             secs = int(start_time)
@@ -347,10 +345,10 @@ async def reminders(event):
         if dum:
             await cleanup(event, db, "Reminders not found.")
 
-        for name, id in reminders_list:
+        for name, rem_id in reminders_list:
             found = True
-            info = scheduler.get_job(id)
-            name = info.name
+            info = scheduler.get_job(rem_id)
+            rem_name = info.name
             if info.next_run_time:
                 next_run_time = f"\nNext run time: {info.next_run_time.strftime('%d/%m/%y %H:%M:%S')}"
                 info_time = info.next_run_time.strftime('%d/%m/%y %H:%M:%S')
@@ -371,7 +369,7 @@ async def reminders(event):
                 interval = f"Every {interval}"
             will_start_on = f"Will start on {start_time}\n\n" if start_time else ""
             status = ("Running" if not message_info["paused"] else "Paused") + ("\n" if will_start_on else "\n\n")
-            string +=   f"{n}. `{name}`" + \
+            string +=   f"{n}. `{rem_name}`" + \
                         f"{next_run_time}{remaining_time}\nRepeating: {interval}\nStatus: {status}" + \
                         f"{will_start_on}"
             n += 1
