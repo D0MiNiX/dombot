@@ -50,18 +50,18 @@ async def cal_glory(event):
     progress = round((float(glory / target) * 100), 2)
     progress_diff = round(progress - round((float(prev / target) * 100), 2), 2)
     battles_progress = round((float(battles_done / TARGET_BATTLES) * 100), 2)
-
+    g_diff = glory - prev
     string = f"Current glory: {glory}" + '\n'
     string += f"Previous battle glory: {prev}" + '\n'
 
-    if progress_diff > 0:
-        string += f"Glory gain: {progress_diff}%"
-    elif progress_diff < 0:
-        string += f"Glory loss: {progress_diff}%"
+    if g_diff > 0:
+        string += f"Glory gain: {g_diff}"
+    elif g_diff < 0:
+        string += f"Glory loss: {g_diff}"
     else:
         string += "No glory change!"
 
-    string += '\n'
+    string += '\n' + '\n'
     string += f"Target glory: {target}" + '\n'
     string += f"Remaining glory: {diff}" + '\n'
     string += f"Total %age progress: {progress}%" + '\n'
