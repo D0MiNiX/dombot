@@ -44,19 +44,28 @@ async def id_list(event):
         await event.reply("Please send fresh roster (not more than 5 mins old).")
         raise events.StopPropagation
 
-    match = re.findall(r".+?\[🛌\].+?(\d{8,})", event.raw_text, re.M)
-    user_names = []
+    match = re.findall(r".+?\[🛌\].+(\d{9,})$", event.raw_text, re.M)
+    ten_dig_match = re.findall(r".+?\[🛌\].+(\d{10,})$", event.raw_text, re.M)
+    user_names = list(map(lambda x: int(x), match))
+    ten_user_names = list(map(lambda x: int(x), ten_dig_match))
+    ok_list = []
 
-    try:
-        user_names = list(map(lambda x: int(x), match))
-        user_names = await bot_vars.bot.get_entity(user_names)
-        user_names = [('@' + k.username) for k in user_names]
-    except Exception as e:
-        print(e.args[0], type(e))
-        raise events.StopPropagation
+    for x in user_names:
+        try:
+            uname = await bot_vars.bot.get_entity(x)
+            ok_list.append('@' + uname.username)
+        except:
+            pass
 
-    for i in range(0, len(user_names), MAX_PIN_PER_MSG):
-        await event.respond(" ".join(user_names[i:i + MAX_PIN_PER_MSG]))
+    for n in ten_user_names:
+        try:
+            uname = await bot_vars.bot.get_entity(n)
+            ok_list.append('@' + uname.username)
+        except:
+            pass
+
+    for i in range(0, len(ok_list), MAX_PIN_PER_MSG):
+        await event.respond(" ".join(ok_list[i:i + MAX_PIN_PER_MSG]))
         await asyncio.sleep(0.5)
 
     if user_names:
