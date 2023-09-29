@@ -238,7 +238,7 @@ async def cw(event):
     cw = cw2 if event.chat_id == CW_BOT else cw_elite
 
     if stam_full_text in event.raw_text and not cw.arena_started:
-        await cw.stam_full(event)
+        #await cw.stam_full(event)
         raise events.StopPropagation
 
     # elif foray_intervene in event.raw_text:
