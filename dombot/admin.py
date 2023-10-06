@@ -7,6 +7,7 @@ from telethon import events
 import vars as bot_vars
 from dombot.start import spam_dict
 import netifaces as ni
+from backup_job import create_and_send_backup
 
 @events.register(events.NewMessage(chats=[bot_vars.D0MiNiX],
                                    from_users=[bot_vars.D0MiNiX], forwards=False))
@@ -25,6 +26,11 @@ async def admin_only(event):
     elif incomingText == '/get_ip':
         ip = ni.ifaddresses('enp1s0')[ni.AF_INET][0]['addr']
         await event.respond(str(ip))
+        raise events.StopPropagation
+
+    elif incomingText == '/bkp':
+        await create_and_send_backup()
+        await event.respond("Backup sent.")
         raise events.StopPropagation
 
     elif Command(incomingText, '/whois'):
