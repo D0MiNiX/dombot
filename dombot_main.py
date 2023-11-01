@@ -61,7 +61,7 @@ def main():
     bot.add_event_handler(vpb_thres.calc_vpbs)
 
     # cal glory
-    bot.add_event_handler(glory.cal_glory)
+    # bot.add_event_handler(glory.cal_glory)
 
     # Update your CW level
     # bot.add_event_handler(blek_magic.set_current_level)
