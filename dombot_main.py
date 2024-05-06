@@ -1,6 +1,6 @@
 from vars import bot, dom, D0MiNiX
 
-
+# Main
 def main():
     # from dombot.typo_tales.dragon_egg import dragon_egg
     from dombot import admin, start, regex, equipments, monsters, triggers, user_tz, \
