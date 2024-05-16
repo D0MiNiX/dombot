@@ -33,7 +33,7 @@ code_name_dict = {
 }
 
 def pre_check(e):
-    if e.forward is None or e.chat_id not in [vars.BOT_POD_GRP, vars.D0MiNiX]:
+    if e.forward is None or e.chat_id not in [vars.D0MiNiX]:
         return False
 
     if e.forward.from_id is None or not hasattr(e.forward.from_id, "user_id"):
